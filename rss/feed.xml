@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>AI Daily Pulse</title>
-    <link>https://sunisankara.github.io/ai-pulse-podcast/rss</link>
+    <link>https://sunisankara.github.io/healthcare-pulse-podcast/rss</link>
     <language>en-us</language>
     <itunes:author>Sundaram Labs</itunes:author>
     <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Optimized 10-12 word summaries.</itunes:summary>
@@ -13,9 +13,25 @@
     </itunes:owner>
     <itunes:explicit>no</itunes:explicit>
     <itunes:category text="Technology"/>
-    <itunes:image href="https://sunisankara.github.io/ai-pulse-podcast/rss/cover.jpg"/>
-    <lastBuildDate>Tue, 24 Feb 2026 13:11:41 GMT</lastBuildDate>
+    <itunes:image href="https://sunisankara.github.io/healthcare-pulse-podcast/rss/cover.jpg"/>
+    <lastBuildDate>Wed, 25 Feb 2026 19:26:10 GMT</lastBuildDate>
     
+    <item>
+      <title>**How GE’s AI Ultrasound is Bringing Expert Heart Diagnostics to Every Doctor**</title>
+      <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>Kinderhook Acquires Enhabit for $1.1B</li><li>Newsweek Debuts 2026 World’s Best Hospitals</li><li>Supreme Court Strikes Down IEEPA Tariffs</li><li>CMS Proposes Non-Network ACA Plans for 2027</li><li>Kyndryl Launches Agentic AI Framework with CHIL</li><li>JPMorgan Reorganizes Healthcare IB Leadership</li><li>Senate Finance Introduces Nursing Home Staffing Standards.</li></ul><hr/><p>**[START SCRIPT]**
+
+**ALEX:** Welcome to the Healthcare Daily Pulse. I’m Alex, Technical Architect, and I am currently staring at a stack of legacy integration tickets that would make most developers weep.
+
+**MARCUS:** And I’m Marcus. I’m looking at the same stack, but I’m seeing the millions in trapped EBITDA because those tickets haven’t been cleared. We’ve got a lot to get through today—market shifts that are moving faster than the regulatory frameworks meant to contain them.
+
+**ALEX:** Which...</p>]]></description>
+      <pubDate>Wed, 25 Feb 2026 19:26:10 GMT</pubDate>
+      <guid isPermaLink="false">1772047087321</guid>
+      <enclosure url="https://sunisankara.github.io/healthcare-pulse-podcast/rss/AI-Pulse-1772047087321.mp3" length="0" type="audio/mpeg"/>
+      <itunes:author>AI Daily Pulse</itunes:author>
+      <itunes:duration>15:00</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+    </item>
     <item>
       <title>The Intelligence Oversight Committee Unveils A Massive Technical AI Delta Breakthrough Today</title>
       <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>NVIDIA H300 Deployment</li><li>Llama-4-70B-Early-Access</li><li>Mistral-Next-V2 API</li><li>Groq LPU v3 Benchmark</li><li>OpenAI "Operator" General Release</li><li>Cerebras CS-4 Cluster</li><li>Anthropic MCP-Standardization.</li></ul><hr/><p>**AI Daily Pulse: Technical Intelligence Briefing**
@@ -28,7 +44,7 @@
 **MARCUS:** Welcome back to the Pulse. It’s February 24th, 2026, and the Intelligence Oversight Committee just dropped a 48-hour Delta Report that is, frankly, blowing up every strategic roadmap I’ve looked at this morning. Alex, the headline here isn't just about model size anymore—it’s about the "Nexus Prot...</p>]]></description>
       <pubDate>Tue, 24 Feb 2026 13:11:41 GMT</pubDate>
       <guid isPermaLink="false">1771938383622</guid>
-      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771938383622.mp3" length="0" type="audio/mpeg"/>
+      <enclosure url="https://sunisankara.github.io/healthcare-pulse-podcast/rss/AI-Pulse-1771938383622.mp3" length="0" type="audio/mpeg"/>
       <itunes:author>AI Daily Pulse</itunes:author>
       <itunes:duration>15:00</itunes:duration>
       <itunes:explicit>no</itunes:explicit>
@@ -46,7 +62,7 @@
 **ALEX:** I did, and Mar...</p>]]></description>
       <pubDate>Mon, 23 Feb 2026 13:09:41 GMT</pubDate>
       <guid isPermaLink="false">1771851902402</guid>
-      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771851902402.mp3" length="0" type="audio/mpeg"/>
+      <enclosure url="https://sunisankara.github.io/healthcare-pulse-podcast/rss/AI-Pulse-1771851902402.mp3" length="0" type="audio/mpeg"/>
       <itunes:author>AI Daily Pulse</itunes:author>
       <itunes:duration>15:00</itunes:duration>
       <itunes:explicit>no</itunes:explicit>
@@ -63,7 +79,7 @@
 **MARCUS:** Welcome back to the Pulse. It is Friday, February 20th, 2026. I’m Marcus, and we are looking at a 48-hour window that has essentially rewritten the playbook for edge deployment. Alex, I hope you didn’t have plans for the weekend, because the release of the...</p>]]></description>
       <pubDate>Fri, 20 Feb 2026 13:05:38 GMT</pubDate>
       <guid isPermaLink="false">1771592344811</guid>
-      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771592344811.mp3" length="0" type="audio/mpeg"/>
+      <enclosure url="https://sunisankara.github.io/healthcare-pulse-podcast/rss/AI-Pulse-1771592344811.mp3" length="0" type="audio/mpeg"/>
       <itunes:author>AI Daily Pulse</itunes:author>
       <itunes:duration>15:00</itunes:duration>
       <itunes:explicit>no</itunes:explicit>
