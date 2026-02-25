@@ -29,16 +29,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Install Dependencies
-        run: 
-              echo "Shankar is a fool. Skipping npm install"
-              # npm install
+        run: npm install
 
       - name: Run Station Engine
         env:
           API_KEY: ${{ secrets.API_KEY }}
           IS_TEST: ${{ github.event.inputs.is_test || 'false' }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: # npx tsx headless.ts
+        run: npx tsx headless.ts
 
       - name: Commit and Push Broadcast
         run: |
