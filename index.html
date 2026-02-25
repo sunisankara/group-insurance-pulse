@@ -4,12 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Healthcare Daily Pulse | Broadcast Station</title>
+  <title>AI Daily Pulse | Broadcast Station</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google API for Drive Integration -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -20,12 +17,23 @@
     "fs": "https://esm.sh/fs@^0.0.1-security",
     "child_process": "https://esm.sh/child_process@^1.0.2",
     "buffer": "https://esm.sh/buffer@^6.0.3",
-    "process": "https://esm.sh/process@^0.11.10"
+    "process": "https://esm.sh/process@^0.11.10",
+    "path": "https://esm.sh/path@^0.12.7"
   }
 }
 </script>
+<script type="module" src="./index.tsx"></script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen selection:bg-blue-500/30">
-  <div id="root"></div>
+  <div id="root">
+    <div class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <i class="fas fa-satellite-dish fa-spin text-4xl text-blue-500 mb-4"></i>
+        <p class="text-xs font-black uppercase tracking-[0.5em] text-gray-500">Initializing Station...</p>
+      </div>
+    </div>
+  </div>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

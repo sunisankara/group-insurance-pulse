@@ -14,7 +14,7 @@ export function generateRSSFeed(
         ? `<p><strong>Intelligence Brief:</strong></p><ul>${e.mainStories.map(s => `<li>${s}</li>`).join('')}</ul><hr/>`
         : '';
       
-      // Force absolute URL for the enclosure
+      // The baseUrl passed here should already include the /rss path if needed
       const audioLink = e.audioUrl.startsWith('http') 
         ? e.audioUrl 
         : `${baseUrl.replace(/\/$/, '')}/${e.audioUrl.replace(/^\//, '')}`;
@@ -22,7 +22,7 @@ export function generateRSSFeed(
       return `
     <item>
       <title>${e.title}</title>
-      <description><![CDATA[${storyList}<p>AI Pulse Daily deep dive.</p>]]></description>
+      <description><![CDATA[${storyList}<p>${e.script.substring(0, 500)}...</p>]]></description>
       <pubDate>${new Date(e.date).toUTCString()}</pubDate>
       <guid isPermaLink="false">${e.id}</guid>
       <enclosure url="${audioLink}" length="0" type="audio/mpeg"/>
@@ -39,7 +39,7 @@ export function generateRSSFeed(
     <link>${baseUrl}</link>
     <language>en-us</language>
     <itunes:author>Sundaram Labs</itunes:author>
-    <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Headless production.</itunes:summary>
+    <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Optimized 10-12 word summaries.</itunes:summary>
     <description>Automated daily AI intelligence briefing.</description>
     <itunes:owner>
       <itunes:name>Sundaram Labs</itunes:name>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>AI Daily Pulse</title>
+    <link>https://sunisankara.github.io/ai-pulse-podcast/rss</link>
+    <language>en-us</language>
+    <itunes:author>Sundaram Labs</itunes:author>
+    <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Optimized 10-12 word summaries.</itunes:summary>
+    <description>Automated daily AI intelligence briefing.</description>
+    <itunes:owner>
+      <itunes:name>Sundaram Labs</itunes:name>
+      <itunes:email>broadcast@sundaramlabs.ai</itunes:email>
+    </itunes:owner>
+    <itunes:explicit>no</itunes:explicit>
+    <itunes:category text="Technology"/>
+    <itunes:image href="https://sunisankara.github.io/ai-pulse-podcast/rss/cover.jpg"/>
+    <lastBuildDate>Tue, 24 Feb 2026 13:11:41 GMT</lastBuildDate>
+    
+    <item>
+      <title>The Intelligence Oversight Committee Unveils A Massive Technical AI Delta Breakthrough Today</title>
+      <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>NVIDIA H300 Deployment</li><li>Llama-4-70B-Early-Access</li><li>Mistral-Next-V2 API</li><li>Groq LPU v3 Benchmark</li><li>OpenAI "Operator" General Release</li><li>Cerebras CS-4 Cluster</li><li>Anthropic MCP-Standardization.</li></ul><hr/><p>**AI Daily Pulse: Technical Intelligence Briefing**
+**Date:** February 24, 2026
+**Duration:** 15 Minutes
+**Hosts:** Alex (Technical Architect) & Marcus (Strategic Visionary)
+
+[START AUDIO]
+
+**MARCUS:** Welcome back to the Pulse. It’s February 24th, 2026, and the Intelligence Oversight Committee just dropped a 48-hour Delta Report that is, frankly, blowing up every strategic roadmap I’ve looked at this morning. Alex, the headline here isn't just about model size anymore—it’s about the "Nexus Prot...</p>]]></description>
+      <pubDate>Tue, 24 Feb 2026 13:11:41 GMT</pubDate>
+      <guid isPermaLink="false">1771938383622</guid>
+      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771938383622.mp3" length="0" type="audio/mpeg"/>
+      <itunes:author>AI Daily Pulse</itunes:author>
+      <itunes:duration>15:00</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+    </item>
+    <item>
+      <title>**Photonic Breakthrough: New Architectural Shifts Shattering Global AI Infrastructure Scaling Limits**</title>
+      <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>Real-time AI Intelligence Update</li></ul><hr/><p>**AI Daily Pulse: Technical Intelligence Briefing**
+**Date:** February 23, 2026
+**Episode Duration:** Approx. 15 Minutes
+
+[INTRO MUSIC: High-tempo, synthetic, clean]
+
+**MARCUS:** Welcome back to the Pulse. It’s February 23rd, 2026, and the last 48 hours have effectively rewritten the playbook for multi-cloud inference. I’m Marcus, and across from me is Alex, who I suspect spent her entire morning looking at latency benchmarks for the new Unified Inference Mesh standard.
+
+**ALEX:** I did, and Mar...</p>]]></description>
+      <pubDate>Mon, 23 Feb 2026 13:09:41 GMT</pubDate>
+      <guid isPermaLink="false">1771851902402</guid>
+      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771851902402.mp3" length="0" type="audio/mpeg"/>
+      <itunes:author>AI Daily Pulse</itunes:author>
+      <itunes:duration>15:00</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+    </item>
+    <item>
+      <title>**How the Rapid Forty Eight Hour Synthesis is Reshaping Global AI Verticals**</title>
+      <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>NVIDIA "Hyperion-X" 100k Cluster Activation</li><li>Mistral-NeMo-V2 Weights Release</li><li>OpenAI "Sora-Pro" API Deployment</li><li>TSMC 1.4nm Yield Breakthrough</li><li>Meta Llama-4-Early-Access Benchmarks</li><li>Groq LPU-3 Hardware Specs Leak</li><li>Anthropic Claude 4.5 Technical Preview.</li></ul><hr/><p>**AI Daily Pulse: Technical Synthesis**
+**Date:** Friday, February 20, 2026
+**Hosts:** Alex (Technical Architect) & Marcus (Strategic Visionary)
+**Length:** Approx. 15 Minutes
+
+[INTRO MUSIC: High-energy, synth-heavy, tech-focused]
+
+**MARCUS:** Welcome back to the Pulse. It is Friday, February 20th, 2026. I’m Marcus, and we are looking at a 48-hour window that has essentially rewritten the playbook for edge deployment. Alex, I hope you didn’t have plans for the weekend, because the release of the...</p>]]></description>
+      <pubDate>Fri, 20 Feb 2026 13:05:38 GMT</pubDate>
+      <guid isPermaLink="false">1771592344811</guid>
+      <enclosure url="https://sunisankara.github.io/ai-pulse-podcast/rss/AI-Pulse-1771592344811.mp3" length="0" type="audio/mpeg"/>
+      <itunes:author>AI Daily Pulse</itunes:author>
+      <itunes:duration>15:00</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+    </item>
+  </channel>
+</rss>
