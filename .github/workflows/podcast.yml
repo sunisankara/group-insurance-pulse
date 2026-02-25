@@ -29,7 +29,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Install Dependencies
-        run: # npm install
+        run: 
+              echo "Shankar is a fool. Skipping npm install"
+              # npm install
 
       - name: Run Station Engine
         env:
