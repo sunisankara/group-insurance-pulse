@@ -1,0 +1,15 @@
+
+name: Station Automation Heartbeat
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Station Pulse
+        run: |
+          echo "STATION ALIVE: $(date)"
+          echo "Automation check passed."
