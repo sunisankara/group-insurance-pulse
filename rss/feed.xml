@@ -1,21 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Daily Healthcare Pulse</title>
+    <title>AI Daily Pulse</title>
     <link>https://sunisankara.github.io/healthcare-pulse-podcast/rss</link>
     <language>en-us</language>
-    <itunes:author>Shankar Sundaram</itunes:author>
-    <itunes:summary>Your daily 15-minute conversational deep dive into latest Healthcare developments. Optimized 10-12 word summaries.</itunes:summary>
-    <description>Automated daily Healthcare intelligence briefing.</description>
+    <itunes:author>Sundaram Labs</itunes:author>
+    <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Optimized 10-12 word summaries.</itunes:summary>
+    <description>Automated daily AI intelligence briefing.</description>
     <itunes:owner>
-      <itunes:name>Shankar Sundaram</itunes:name>
-      <itunes:email>shankar.sundaram.0@gmail.com</itunes:email>
+      <itunes:name>Sundaram Labs</itunes:name>
+      <itunes:email>broadcast@sundaramlabs.ai</itunes:email>
     </itunes:owner>
     <itunes:explicit>no</itunes:explicit>
     <itunes:category text="Technology"/>
-    <itunes:image href="https://sunisankara.github.io/healthcare-pulse-podcast/rss/cover.png"/>
-    <lastBuildDate>Wed, 25 Feb 2026 19:26:10 GMT</lastBuildDate>
+    <itunes:image href="https://sunisankara.github.io/healthcare-pulse-podcast/rss/cover.jpg"/>
+    <lastBuildDate>Thu, 26 Feb 2026 13:02:24 GMT</lastBuildDate>
     
+    <item>
+      <title>**How The AstraZeneca Lung Cancer Breakthrough Is Redefining The Future Of Survival**</title>
+      <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>UnitedHealth’s $113B Revenue Miss & Stephen Hemsley's Return</li><li>CMS Finalizes Medicaid Tax Loophole Closure Saving $78B</li><li>Amazon Pharmacy Expands Same-Day Delivery to 4</li><li>500 Cities</li><li>North Star Health Alliance Files Chapter 11 Amid Cyber Attacks</li><li>CMS Proposes 2027 ACA Marketplace Overhaul</li><li>Kyndryl & University of Liverpool Launch Agentic AI Framework</li><li>Tenet Healthcare Beats Q4 Earnings with $5.53B Revenue.</li></ul><hr/><p>**[INTRO MUSIC: Fast-paced, synth-heavy, professional but energetic.]**
+
+**ALEX:** It’s Tuesday. I’m Alex, and I’m looking at the balance sheet.
+
+**MARCUS:** And I’m Marcus, looking at the horizon. This is the Healthcare Daily Pulse. We’ve got fifteen minutes to break down the moves that actually matter in the market. 
+
+**ALEX:** And by "matter," we mean the ones that’ll survive a 2025 audit. Marcus, you’ve been tracking the RCM space all morning. What’s the "War Room" takeaway?
+
+**MARCUS:** Ale...</p>]]></description>
+      <pubDate>Thu, 26 Feb 2026 13:02:24 GMT</pubDate>
+      <guid isPermaLink="false">1772110413599</guid>
+      <enclosure url="https://sunisankara.github.io/healthcare-pulse-podcast/rss/AI-Pulse-1772110413599.mp3" length="0" type="audio/mpeg"/>
+      <itunes:author>AI Daily Pulse</itunes:author>
+      <itunes:duration>15:00</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+    </item>
     <item>
       <title>**How GE’s AI Ultrasound is Bringing Expert Heart Diagnostics to Every Doctor**</title>
       <description><![CDATA[<p><strong>Intelligence Brief:</strong></p><ul><li>Kinderhook Acquires Enhabit for $1.1B</li><li>Newsweek Debuts 2026 World’s Best Hospitals</li><li>Supreme Court Strikes Down IEEPA Tariffs</li><li>CMS Proposes Non-Network ACA Plans for 2027</li><li>Kyndryl Launches Agentic AI Framework with CHIL</li><li>JPMorgan Reorganizes Healthcare IB Leadership</li><li>Senate Finance Introduces Nursing Home Staffing Standards.</li></ul><hr/><p>**[START SCRIPT]**
