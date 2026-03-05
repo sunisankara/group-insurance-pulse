@@ -47,8 +47,9 @@ async function run() {
       console.log('Step 2: Scripting...');
       script = await generatePodcastScript(report.newsText);
       console.log('Step 3: Metadata Synthesis...');
-      title = await generateEpisodeMetadata(report.newsText);
-      
+      //title = await generateEpisodeMetadata(report.newsText);
+      title = report.topStories[0] || "Healthcare Daily Pulse: Breaking News and Analysis";
+
       console.log('Step 4: Voice Production...');
       const segments = script.split('[TRANSITION]').filter(s => s.trim().length > 5);
       if (fs.existsSync(pcmFile)) fs.unlinkSync(pcmFile);

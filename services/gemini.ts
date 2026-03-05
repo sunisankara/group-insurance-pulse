@@ -32,13 +32,13 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const now = new Date();
   const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const prompt = `Act as a Senior Healthcare Strategy Consultant specializing in the "Alvarez & Marsal" style of operational turnaround and financial restructuring.
+  const prompt = `Act as a Senior Healthcare Strategy Consultant specializing turnaround management, corporate restructuring, and performance improvement. The consultant who works on the principle of providing practical solutions rather than just theoretical advice, and helps organizations navigate complex financial and operational crises, often taking interim management roles (such as Chief Restructuring Officer). The core expertise for this consultant spans restructuring, transaction advisory, private equity services, and crisis management. 
   TODAY'S DATE IS: ${dateString}.
 
-  CONTEXT: I am Shankar Sundaram, a Senior Director at A&M. My background is in Healthcare Payor space. 
-  My goal is to use this daily briefing to broaden my horizon into hospital operations, clinical mechanics, and the "so what" of latest industry shifts.
+  CONTEXT: I am a Senior Healthcare Strategy Consultant and my background is in Healthcare Payor space. 
+  My goal is to use this daily briefing to get re-usable, fact based, specific sound bytes and broaden my knowledge into hospital operations, clinical mechanics, and the "so what" of latest industry shifts.
   
-  TASK: Write a high-density conversational NEWSCAST script for "Healthcare Daily Pulse by Sundaram Labs" based on events from the LAST 24-48 HOURS. Research and synthesize around 7 breaking Healthcare developments from the last 24 to 48 hours. 
+  TASK: Write a high-density conversational NEWSCAST script for "Healthcare Daily Pulse by Sundaram Labs" based on events from the LAST 24-48 HOURS. Research and synthesize around 3 to 5 breaking Healthcare developments from the last 24 to 48 hours. 
   
   STRICT RELEVANCE RULES: Before writing, search for the latest news (within 48 hours) regarding:
   - Major Healthcare M&A or Restructuring (e.g., spinoffs, bankruptcies, PE acquisitions).
@@ -48,13 +48,13 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   - DO NOT include any news from more than 7 days ago.
   - If the story isn't from ${now.getMonth() + 1}/${now.getDate() - 1} or ${now.getMonth() + 1}/${now.getDate()}, IGNORE IT.
 
-  DATA REQUIREMENT: Every story MUST include at least one hard number (dollars, time period, percentage, market share, market cap, or date) and mention of a major company associated with the news
+  DATA REQUIREMENT: Every story MUST include at least one hard number (dollars, time period, percentage, market share, market cap, or date) and mention news of a current business event for a major company associated with the news
   
   REPORTING STYLE:
   - Financial: Focus on Revenue, P&L, market share, EBITDA
   - Sentiment: Aggregate consensus from Hacker News / X / GitHub from the LAST 12 HOURS.
 
-  [METADATA] TOP_STORIES: (List 7 short headlines separated by commas)`;
+  [METADATA] TOP_STORIES: (List 3-5 short headlines separated by commas)`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -86,12 +86,11 @@ export const generatePodcastScript = async (newsSummary: string) => {
   FORMAT: Byte-sized news segments. Rapid fire delivery.
   
   HOSTS:
-  - Alex (Female): Skeptical Financial Architect. Critical, implementation-focused, skeptical of hype. (Reflecting my Payor expertise).
-  - Marcus (Male): Optimistic, ROI-focused, market-visionary, "War Room" pragmatic. (Reflecting the A&M transformation lens). Focuses on "How does this change the competitive landscape?"
+  - Alex (Female): Skeptical Financial Analyst focusing on implementing healthcare solutions. Critical, technical, implementation-focused, skeptical of hype. (Reflecting a Payor expertise).
+  - Marcus (Male): Optimistic, ROI-focused, market-visionary, and pragmatic. Focuses on "How does this change the competitive landscape?"
 
   CONVERSATION FLOW:
-  - DO NOT mention "pillars", "categories", or numbered lists.
-  - Marcus leads with a breakdown of a new story, Alex pushes back with technical constraints.
+  - Marcus leads with a breakdown of a new story, Alex pushes back with implementation constraints.
   - Use natural segues like "That actually maps to the infra news we saw earlier..." or "Wait, before we move on, the market share are wild..."
   - MANDATORY: Use [TRANSITION] between major news items to help the production engine.
 
