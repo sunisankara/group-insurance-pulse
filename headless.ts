@@ -36,8 +36,7 @@ async function run() {
     let title = "";
 
     if (IS_TEST) {
-      console.log('[DIAGNOSTIC] Producing 1-second sine test...');
-      execSync(`ffmpeg -f lavfi -i "sine=frequency=440:duration=1" -acodec libmp3lame -ab 128k ${filePath}`);
+      console.log("testing...");
       script = "Diagnostic Heartbeat Successful.";
       report = { topStories: ["System Check"] };
       title = "System Diagnostic: Automated Verification of Cloud Infrastructure";

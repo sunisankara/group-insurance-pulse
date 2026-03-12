@@ -29,11 +29,22 @@ export const generateEpisodeMetadata = async (summary: string) => {
 
 export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  let h = " \;
+ try {
+ const fs = require(\fs\);
+ const path = require(\path\);
+ const epPath = path.join(process.cwd(), \rss\, \episodes.json\);
+ if (fs.existsSync(epPath)) {
+ const eps = JSON.parse(fs.readFileSync(epPath, \utf-8\));
+ const r = eps.slice(0, 3).map(function(e){return e.title}).join(" \);
+      if (r) h = \Avoid_repeating: \ + r;
+    }
+  } catch (e) { }
   const now = new Date();
   const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
   const prompt = `Act as a Senior Healthcare Strategy Consultant specializing turnaround management, corporate restructuring, and performance improvement. The consultant who works on the principle of providing practical solutions rather than just theoretical advice, and helps organizations navigate complex financial and operational crises, often taking interim management roles (such as Chief Restructuring Officer). The core expertise for this consultant spans restructuring, transaction advisory, private equity services, and crisis management. 
-  TODAY'S DATE IS: ${dateString}.
+  TODAY'S DATE IS: ${dateString}. ${h}                                                                                                                                        
 
   CONTEXT: I am a Senior Healthcare Strategy Consultant and my background is in Healthcare Payor space. 
   My goal is to use this daily briefing to get re-usable, fact based, specific sound bytes and broaden my knowledge into hospital operations, clinical mechanics, and the "so what" of latest industry shifts.
@@ -87,10 +98,10 @@ export const generatePodcastScript = async (newsSummary: string) => {
   
   HOSTS:
   - Alex (Female): Skeptical Financial Analyst focusing on implementing healthcare solutions. Critical, technical, implementation-focused, skeptical of hype. (Reflecting a Payor expertise).
-  - Marcus (Male): Optimistic, ROI-focused, market-visionary, and pragmatic. Focuses on "How does this change the competitive landscape?"
+  - Sam (Male): Optimistic, ROI-focused, market-visionary, and pragmatic. Focuses on "How does this change the competitive landscape?"
 
   CONVERSATION FLOW:
-  - Marcus leads with a breakdown of a new story, Alex pushes back with implementation constraints.
+  - Sam leads with a breakdown of a new story, Alex pushes back with implementation constraints.
   - Use natural segues like "That actually maps to the infra news we saw earlier..." or "Wait, before we move on, the market share are wild..."
   - MANDATORY: Use [TRANSITION] between major news items to help the production engine.
 
@@ -146,7 +157,7 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
             multiSpeakerVoiceConfig: {
               speakerVoiceConfigs: [
                 { speaker: 'Alex', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-                { speaker: 'Marcus', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
+                { speaker: 'Sam', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
               ]
             }
           }
@@ -159,3 +170,260 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
   }
   return results;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
