@@ -29,15 +29,15 @@ export const generateEpisodeMetadata = async (summary: string) => {
 
 export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  let h = " \;
+  let h = "";
  try {
- const fs = require(\fs\);
- const path = require(\path\);
- const epPath = path.join(process.cwd(), \rss\, \episodes.json\);
+ const fs = require('fs');
+ const path = require('path');
+ const epPath = path.join(process.cwd(), 'rss', 'episodes.json');
  if (fs.existsSync(epPath)) {
- const eps = JSON.parse(fs.readFileSync(epPath, \utf-8\));
- const r = eps.slice(0, 3).map(function(e){return e.title}).join(" \);
-      if (r) h = \Avoid_repeating: \ + r;
+ const eps = JSON.parse(fs.readFileSync(epPath, 'utf-8'));
+ const r = eps.slice(0, 3).map(function(e){return e.title}).join(", ");
+      if (r) h = "Avoid repeating: " + r;
     }
   } catch (e) { }
   const now = new Date();
