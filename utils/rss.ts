@@ -1,5 +1,4 @@
-
-import { PodcastEpisode } from '../types';
+﻿import { PodcastEpisode } from '../types';
 
 export function generateRSSFeed(
   episodes: PodcastEpisode[], 
@@ -14,15 +13,17 @@ export function generateRSSFeed(
         ? `<p><strong>Intelligence Brief:</strong></p><ul>${e.mainStories.map(s => `<li>${s}</li>`).join('')}</ul><hr/>`
         : '';
       
-      // The baseUrl passed here should already include the /rss path if needed
       const audioLink = e.audioUrl.startsWith('http') 
         ? e.audioUrl 
         : `${baseUrl.replace(/\/$/, '')}/${e.audioUrl.replace(/^\//, '')}`;
         
+      const formattedScript = e.script.replace(/\n/g, '<br/>');
+
       return `
     <item>
       <title>${e.title}</title>
       <description><![CDATA[${storyList}<p>${e.script.substring(0, 500)}...</p>]]></description>
+      <content:encoded><![CDATA[${storyList}${formattedScript}]]></content:encoded>
       <pubDate>${new Date(e.date).toUTCString()}</pubDate>
       <guid isPermaLink="false">${e.id}</guid>
       <enclosure url="${audioLink}" length="0" type="audio/mpeg"/>

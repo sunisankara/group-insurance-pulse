@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality } from "@google/genai";
+﻿import { GoogleGenAI, Modality } from "@google/genai";
 import process from 'process';
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
@@ -19,7 +19,7 @@ export const generateEpisodeMetadata = async (summary: string) => {
   Summary: ${summary}`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: { temperature: 0.8 }
   });
@@ -29,50 +29,47 @@ export const generateEpisodeMetadata = async (summary: string) => {
 
 export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  let h = "";
- try {
- const fs = require('fs');
- const path = require('path');
- const epPath = path.join(process.cwd(), 'rss', 'episodes.json');
- if (fs.existsSync(epPath)) {
- const eps = JSON.parse(fs.readFileSync(epPath, 'utf-8'));
- const r = eps.slice(0, 3).map(function(e){return e.title}).join(", ");
-      if (r) h = "Avoid repeating: " + r;
+  let historyTitles = "";
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const epPath = path.join(process.cwd(), 'rss', 'episodes.json');
+    if (fs.existsSync(epPath)) {
+      const eps = JSON.parse(fs.readFileSync(epPath, 'utf-8'));
+      // Get titles from the last 15 episodes (covering ~7-10 days) to prevent repeats
+      const r = eps.slice(0, 15).map(function(e){ return e.title + (e.mainStories ? ": " + e.mainStories.join(", ") : "") }).join(" | ");
+      if (r) historyTitles = "RECENTLY COVERED TOPICS (DO NOT REPEAT): " + r;
     }
   } catch (e) { }
+
   const now = new Date();
   const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const prompt = `Act as a Senior Healthcare Strategy Consultant specializing turnaround management, corporate restructuring, and performance improvement. The consultant who works on the principle of providing practical solutions rather than just theoretical advice, and helps organizations navigate complex financial and operational crises, often taking interim management roles (such as Chief Restructuring Officer). The core expertise for this consultant spans restructuring, transaction advisory, private equity services, and crisis management. 
-  TODAY'S DATE IS: ${dateString}. ${h}                                                                                                                                        
+  const prompt = `Act as a Senior Healthcare Strategy Researcher.
+  TODAY'S DATE IS: ${dateString}. 
+  ${historyTitles}
 
-  CONTEXT: I am a Senior Healthcare Strategy Consultant and my background is in Healthcare Payor space. 
-  My goal is to use this daily briefing to get re-usable, fact based, specific sound bytes and broaden my knowledge into hospital operations, clinical mechanics, and the "so what" of latest industry shifts.
+  TASK: Research and synthesize 3 to 5 significant Healthcare business developments from the LAST 24-48 HOURS.
   
-  TASK: Write a high-density conversational NEWSCAST script for "Healthcare Daily Pulse by Sundaram Labs" based on events from the LAST 24-48 HOURS. Research and synthesize around 3 to 5 breaking Healthcare developments from the last 24 to 48 hours. 
-  
-  STRICT RELEVANCE RULES: Before writing, search for the latest news (within 48 hours) regarding:
-  - Major Healthcare M&A or Restructuring (e.g., spinoffs, bankruptcies, PE acquisitions).
-  - New CMS Mandates, Federal Laws, or Regulatory Rulings.
-  - Large-scale operational projects undertaken by Top 20 Health Systems.
-  - Breakthroughs in 'Agentic AI' or health-tech implementation.
-  - DO NOT include any news from more than 7 days ago.
-  - If the story isn't from ${now.getMonth() + 1}/${now.getDate() - 1} or ${now.getMonth() + 1}/${now.getDate()}, IGNORE IT.
+  STRICT RELEVANCE RULES: 
+  - Focus on M&A, Restructuring, Regulatory Rulings (CMS), and major Health Tech deployments.
+  - Every story MUST include hard numbers (dollars, percentages, or dates) and specific company names.
+  - REPEAT PREVENTION: Do not cover the same core news items mentioned in the RECENTLY COVERED TOPICS list above unless there is a major new development (e.g., a new acquisition or a new federal ruling) that occurred in the last 24 hours.
+  - If a story is not from ${now.getMonth() + 1}/${now.getDate() - 1} or ${now.getMonth() + 1}/${now.getDate()}, IGNORE IT.
 
-  DATA REQUIREMENT: Every story MUST include at least one hard number (dollars, time period, percentage, market share, market cap, or date) and mention news of a current business event for a major company associated with the news
-  
-  REPORTING STYLE:
-  - Financial: Focus on Revenue, P&L, market share, EBITDA
-  - Sentiment: Aggregate consensus from Hacker News / X / GitHub from the LAST 12 HOURS.
+  OUTPUT FORMAT:
+  For each story, provide:
+  - HEADLINE: [Title]
+  - FACTS: [Bullet points of numbers, companies, and "so what"]
+  - CONTEXT: [Why this matters for payors and providers]
 
-  [METADATA] TOP_STORIES: (List 3-5 short headlines separated by commas)`;
+  [METADATA] TOP_STORIES: (List the headlines separated by commas)`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: { 
-      tools: [{ googleSearch: {} }],
-      thinkingConfig: { thinkingBudget: 0 }
+      tools: [{ googleSearch: {} }]
     },
   });
 
@@ -97,22 +94,24 @@ export const generatePodcastScript = async (newsSummary: string) => {
   FORMAT: Byte-sized news segments. Rapid fire delivery.
   
   HOSTS:
-  - Alex (Female): Skeptical Financial Analyst focusing on implementing healthcare solutions. Critical, technical, implementation-focused, skeptical of hype. (Reflecting a Payor expertise).
-  - Sam (Male): Optimistic, ROI-focused, market-visionary, and pragmatic. Focuses on "How does this change the competitive landscape?"
+  - Alex: Skeptical Financial Analyst (Payor expert). Technical, critical, implementation-focused.
+  - Sam: Optimistic Market Visionary (ROI/Competitive Strategy expert). Pragmatic but forward-looking.
 
-  CONVERSATION FLOW:
-  - Sam leads with a breakdown of a new story, Alex pushes back with implementation constraints.
-  - Use natural segues like "That actually maps to the infra news we saw earlier..." or "Wait, before we move on, the market share are wild..."
-  - MANDATORY: Use [TRANSITION] between major news items to help the production engine.
+  CONVERSATION STYLE:
+  - Extremely dense, technical, and data-driven.
+  - Sam presents the facts, Alex analyzes the "implementation friction" and P&L impact.
+  - Use [TRANSITION] between major news items.
 
+  STRICT INSTRUCTION: Only use the news data provided below. Do not hallucinate old stories or standard industry tropes.
+  
   DATA TO SYNTHESIZE:
   ${newsSummary}`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: { 
-      maxOutputTokens: 6000,
+      maxOutputTokens: 8000,
       temperature: 0.7
     }
   });
@@ -132,7 +131,7 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
 
   const chunks: string[] = [];
   let remaining = cleanText;
-  const MAX_CHUNK = 800;
+  const MAX_CHUNK = 1000;
 
   while (remaining.length > 0) {
     if (remaining.length <= MAX_CHUNK) {
@@ -149,7 +148,7 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
   for (const chunk of chunks) {
     const data = await withRetry(async () => {
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
+        model: "gemini-2.5-flash",
         contents: [{ parts: [{ text: chunk }] }],
         config: {
           responseModalities: [Modality.AUDIO],
@@ -166,255 +165,10 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
       return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     });
     if (data) results.push(data);
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 500));
   }
   return results;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
