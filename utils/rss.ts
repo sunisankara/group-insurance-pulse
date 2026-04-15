@@ -1,4 +1,5 @@
-﻿import { PodcastEpisode } from '../types';
+
+import { PodcastEpisode } from '../types';
 
 export function generateRSSFeed(
   episodes: PodcastEpisode[], 
@@ -27,7 +28,7 @@ export function generateRSSFeed(
       <pubDate>${new Date(e.date).toUTCString()}</pubDate>
       <guid isPermaLink="false">${e.id}</guid>
       <enclosure url="${audioLink}" length="0" type="audio/mpeg"/>
-      <itunes:author>Healthcare Daily Pulse</itunes:author>
+      <itunes:author>Group Insurance Daily Pulse</itunes:author>
       <itunes:duration>15:00</itunes:duration>
       <itunes:explicit>no</itunes:explicit>
     </item>`;
@@ -36,17 +37,18 @@ export function generateRSSFeed(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Healthcare Daily Pulse</title>
+    <title>Group Insurance Daily Pulse</title>
     <link>${baseUrl}</link>
     <language>en-us</language>
     <itunes:author>Sundaram Labs</itunes:author>
-    <itunes:summary>Your daily 15-minute conversational deep dive into latest AI developments. Optimized 10-12 word summaries.</itunes:summary>
-    <description>Automated daily AI intelligence briefing.</description>
+    <itunes:summary>Your daily conversational deep dive into Group Insurance news, technology, and M&amp;A. Featuring Aria the Actuary and Dorian the Distribution Expert.</itunes:summary>
+    <description>Daily analysis of Group Life, Disability, and Benefits insurance.</description>
     <itunes:owner>
       <itunes:name>Sundaram Labs</itunes:name>
       <itunes:email>${ownerEmail}</itunes:email>
     </itunes:owner>
     <itunes:explicit>no</itunes:explicit>
+    <itunes:category text="Business"/>
     <itunes:category text="Technology"/>
     <itunes:image href="${baseUrl}/cover.jpg"/>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>

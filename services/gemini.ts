@@ -15,7 +15,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Pr
 
 export const generateEpisodeMetadata = async (summary: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Based on this real-time Healthcare news summary, generate a catchy, high-impact podcast episode title that is EXACTLY 10 to 12 words long.
+  const prompt = `Based on this real-time Group Insurance news summary, generate a catchy, high-impact podcast episode title that is EXACTLY 10 to 12 words long.
   Focus on the most significant technical or market breakthrough from TODAY.
   
   Summary: ${summary}`;
@@ -26,7 +26,7 @@ export const generateEpisodeMetadata = async (summary: string) => {
     config: { temperature: 0.8 }
   });
 
-  return response.text?.trim().replace(/^"|"$/g, '') || "Daily Healthcare Intelligence Briefing: The Latest Technical and Market Evolution in Healthcare Observed Today";
+  return response.text?.trim().replace(/^"|"$/g, '') || "Daily Group Insurance Intelligence Briefing: The Latest Technical and Market Evolution observed today";
 };
 
 export const fetchAINews = async (categories: string[] = []): Promise<any> => {
@@ -44,23 +44,27 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const now = new Date();
   const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const prompt = `Act as a Senior Healthcare Strategy Researcher.
+  const prompt = `Act as a Senior Group Insurance Strategy Researcher.
   TODAY'S DATE IS: ${dateString}. 
   ${historyTitles}
 
-  TASK: Research and synthesize 3 to 5 significant Healthcare business developments from the LAST 24-48 HOURS.
+  TASK: Research and synthesize 3 to 5 significant Group Insurance business developments from the LAST 24-48 HOURS.
   
   STRICT RELEVANCE RULES: 
-  - Focus on M&A, Restructuring, Regulatory Rulings (CMS), and major Health Tech deployments.
+  - Focus on carriers: NYL (Group Benefit Solutions), Aflac, Unum, MetLife, Hartford, Guardian, Prudential, Lincoln Financial.
+  - Topics: Life, Disability, Accident, Critical Illness, Accidental Injury, Employee Benefits.
+  - Focus on M&A, tech/AI advancements, broker news, TPAs, sales/distributionStakeholders.
+  - Look for regulatory changes (ERISA, PFML, DOL, DOI) and market disruptions.
+  - Look for new capabilities in claims administration, payment tech, revenue cycle, and commissions.
   - Every story MUST include hard numbers (dollars, percentages, or dates) and specific company names.
-  - REPEAT PREVENTION: Do not cover the same core news items mentioned in the RECENTLY COVERED TOPICS list above unless there is a major new development (e.g., a new acquisition or a new federal ruling) that occurred in the last 24 hours.
+  - REPEAT PREVENTION: Do not cover the same core news items mentioned in the RECENTLY COVERED TOPICS list.
   - If a story is not from ${now.getMonth() + 1}/${now.getDate() - 1} or ${now.getMonth() + 1}/${now.getDate()}, IGNORE IT.
 
   OUTPUT FORMAT:
   For each story, provide:
   - HEADLINE: [Title]
   - FACTS: [Bullet points of numbers, companies, and "so what"]
-  - CONTEXT: [Why this matters for payors and providers]
+  - CONTEXT: [Why this matters for carriers, brokers, and employers]
 
   [METADATA] TOP_STORIES: (List the headlines separated by commas)`;
 
@@ -76,7 +80,7 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   const parts = text.split('[METADATA]');
   const report = parts[0] || "";
   const metadata = parts[1] || "";
-  const topStories = metadata.match(/TOP_STORIES: (.*)/)?.[1]?.split(',') || ["Real-time Healthcare Intelligence Update"];
+  const topStories = metadata.match(/TOP_STORIES: (.*)/)?.[1]?.split(',') || ["Real-time Group Insurance Intelligence Update"];
   
   return {
     newsText: report.trim(),
@@ -87,21 +91,21 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
 
 export const generatePodcastScript = async (newsSummary: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Write a 15-minute technical conversation script for "Healthcare Daily Pulse".
+  const prompt = `Write a 15-minute technical conversation script for "Group Insurance Daily Pulse".
 
   TARGET LENGTH: 15 minutes (~2,200 words).
   FORMAT: Byte-sized news segments. Rapid fire delivery.
   
   HOSTS:
-  - Alex: Skeptical Financial Analyst (Payor expert). Technical, critical, implementation-focused.
-  - Sam: Optimistic Market Visionary (ROI/Competitive Strategy expert). Pragmatic but forward-looking.
+  - Aria: Aria the Actuary. Skeptical, analytical, risk-focused. Concerned with P&L, Regulatory (ERISA, DOI), and solvency.
+  - Dorian: Dorian the Distribution Expert. Optimistic, forward-leaning, focused on ROI, market share, and employee retention/experience.
 
   CONVERSATION STYLE:
   - Extremely dense, technical, and data-driven.
-  - Sam presents the facts, Alex analyzes the "implementation friction" and P&L impact.
+  - Dorian presents the facts/innovations, Aria analyzes the risk and implementation friction.
   - Use [TRANSITION] between major news items.
 
-  STRICT INSTRUCTION: Only use the news data provided below. Do not hallucinate old stories or standard industry tropes.
+  STRICT INSTRUCTION: Only use the news data provided below. Do not hallucinate old stories.
   
   DATA TO SYNTHESIZE:
   ${newsSummary}`;
@@ -121,8 +125,6 @@ export const generatePodcastScript = async (newsSummary: string) => {
 export const generateSegmentAudio = async (text: string): Promise<string[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const cleanText = text
-    .replace(/Sundaram/gi, 'Suun-duh-ruhm')
-    .replace(/Labs/gi, 'Labbz')
     .replace(/\[.*?\]/g, '') 
     .trim();
 
@@ -154,8 +156,8 @@ export const generateSegmentAudio = async (text: string): Promise<string[]> => {
           speechConfig: {
             multiSpeakerVoiceConfig: {
               speakerVoiceConfigs: [
-                { speaker: 'Alex', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-                { speaker: 'Sam', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
+                { speaker: 'Aria', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+                { speaker: 'Dorian', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
               ]
             }
           }
