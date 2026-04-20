@@ -42,7 +42,7 @@ jobs:
 
       - name: Commit and Push Broadcast
         run: |
-          git config --global user.name "Heathcare Pulse Bot"
+          git config --global user.name "Group Insurance Pulse Bot"
           git config --global user.email "shankar.sundaram.0@gmail.com"
           
           # 1. Stage all changes (new MP3s, updated JSON, updated feed.xml)
