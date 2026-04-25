@@ -1,7 +1,7 @@
 name: Group Insurance Daily Broadcast
 on:
   schedule:
-    - cron: '10 12 * * 1-5'
+    - cron: '10 10 * * 1-5'
   workflow_dispatch:
     inputs:
       is_test:
