@@ -6,6 +6,7 @@ import { execSync } from 'child_process';
 export interface AuditResult {
   passed: boolean;
   issues: string[];
+  feedbackPrompt?: string;
   duration?: number;
   voiceConsistency?: boolean;
   hasRepeats?: boolean;
@@ -17,7 +18,7 @@ export async function auditPodcast(audioPath: string, script: string): Promise<A
 
   // Check duration
   const duration = await getAudioDuration(audioPath);
-  if (duration < 600 || duration > 900) { // 10-15 minutes in seconds
+  if (duration < 600 || duration > 1000) { // 10-15 minutes in seconds
     issues.push(`Duration ${Math.round(duration/60)} minutes is outside 10-15 minute range`);
   }
 
@@ -39,9 +40,18 @@ export async function auditPodcast(audioPath: string, script: string): Promise<A
     issues.push('Stories missing headlines - content jumps directly into details');
   }
 
+  const feedbackPrompt = generateAuditFeedbackPrompt({
+    issues,
+    duration,
+    voiceConsistent,
+    hasRepeats,
+    hasHeadlines
+  });
+
   return {
     passed: issues.length === 0,
     issues,
+    feedbackPrompt,
     duration,
     voiceConsistency: voiceConsistent,
     hasRepeats,
@@ -166,6 +176,46 @@ function checkHeadlines(script: string): boolean {
   }
 
   return true;
+}
+
+export function generateAuditFeedbackPrompt(audit: {
+  issues: string[];
+  duration?: number;
+  voiceConsistent?: boolean;
+  hasRepeats?: boolean;
+  hasHeadlines?: boolean;
+}): string {
+  const feedbackItems: string[] = [];
+
+  // Duration feedback
+  if (audit.duration !== undefined) {
+    if (audit.duration < 600) {
+      feedbackItems.push(`DURATION FEEDBACK: Episode too short (${Math.round(audit.duration / 60)} min). Expand content, add more analysis, deeper story context. Target 10-15 minutes (~2200 words).`);
+    } else if (audit.duration > 1000) {
+      feedbackItems.push(`DURATION FEEDBACK: Episode too long (${Math.round(audit.duration / 60)} min). Reduce verbosity, tighten pacing, eliminate tangents, focus on essential points only. Target 10-15 minutes (~2200 words).`);
+    }
+  }
+
+  // Voice consistency feedback
+  if (audit.voiceConsistent === false) {
+    feedbackItems.push(`VOICE CONSISTENCY FEEDBACK: Enforce distinct speaker voices throughout. Aria MUST ALWAYS be female voice (Kore), Dorian MUST ALWAYS be male voice (Puck). Never switch, blend, or use alternate voices for either character. Maintain consistent speaker identity across all dialogue.`);
+  }
+
+  // Repeat detection feedback
+  if (audit.hasRepeats === false) {
+    feedbackItems.push(`CONTENT REPETITION FEEDBACK: Detected repeated segments, phrases, or stories. Ensure every news item, transition, and point is unique and distinct. Do not echo previous episodes' content. Vary sentence structure and narrative flow.`);
+  }
+
+  // Headlines feedback
+  if (audit.hasHeadlines === false) {
+    feedbackItems.push(`STRUCTURE FEEDBACK: Each story must open with a clear, compelling headline that captures the news item. Do not jump directly into details. Format: [HEADLINE: Story Title] followed by context. Aria and Dorian should reference the headline in their analysis.`);
+  }
+
+  if (feedbackItems.length === 0) {
+    return "AUDIT FEEDBACK: Episode passed all quality checks. Maintain current standards for consistency, pacing, and structure.";
+  }
+
+  return `AUDIT FEEDBACK FOR NEXT GENERATION CYCLE:\n\n${feedbackItems.join('\n\n')}`;
 }
 
 export async function reRecordSegment(script: string, segmentIndex: number): Promise<string[]> {

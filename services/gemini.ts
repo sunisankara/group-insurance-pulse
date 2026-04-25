@@ -89,8 +89,13 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   };
 };
 
-export const generatePodcastScript = async (newsSummary: string) => {
+export const generatePodcastScript = async (newsSummary: string, feedbackPrompt?: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const feedbackSection = feedbackPrompt 
+    ? `\n\nFEEDBACK FROM PREVIOUS GENERATION:\n${feedbackPrompt}\n\nIncorporate this feedback into the script generation.`
+    : '';
+
   const prompt = `Write a 15-minute technical conversation script for "Group Insurance Daily Pulse".
 
   TARGET LENGTH: 15 minutes (~2,200 words).
@@ -108,7 +113,7 @@ export const generatePodcastScript = async (newsSummary: string) => {
   STRICT INSTRUCTION: Only use the news data provided below. Do not hallucinate old stories.
   
   DATA TO SYNTHESIZE:
-  ${newsSummary}`;
+  ${newsSummary}${feedbackSection}`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -120,6 +125,14 @@ export const generatePodcastScript = async (newsSummary: string) => {
   });
 
   return response.text || "";
+};
+
+export const regenerateScriptWithFeedback = async (newsSummary: string, auditResult: any): Promise<string> => {
+  const feedbackPrompt = auditResult.feedbackPrompt;
+  if (!feedbackPrompt) {
+    throw new Error("Audit result must include feedbackPrompt");
+  }
+  return generatePodcastScript(newsSummary, feedbackPrompt);
 };
 
 export const generateSegmentAudio = async (text: string): Promise<string[]> => {

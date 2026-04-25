@@ -12,6 +12,7 @@ export interface PodcastEpisode {
   auditResult?: {
     passed: boolean;
     issues: string[];
+    feedbackPrompt?: string;
     duration?: number;
     voiceConsistency?: boolean;
     hasRepeats?: boolean;
