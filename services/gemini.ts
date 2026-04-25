@@ -53,8 +53,8 @@ export const fetchAINews = async (categories: string[] = []): Promise<any> => {
   STRICT RELEVANCE RULES: 
   - PRIMARY TARGETS (Competitors): MetLife, Prudential Financial, Lincoln Financial, Unum, The Hartford, Sun Life, Guardian Life, Principal Financial, Mutual of Omaha, Voya Financial, Reliance Matrix, OneAmerica, Securian Financial, Standard Insurance Company (The Standard), Aflac, USAble Life, Dearborn Group.
   - Topics: Group Life, Disability (STD/LTD), Accident, Critical Illness, Accidental Injury, Hospital Indemnity, Employee Benefits.
-  - Focus on M&A, tech/AI advancements, broker/consultant news (Mercer, WTW, Aon), TPAs, sales/distribution Stakeholders.
-  - Look for regulatory changes (ERISA, PFML, DOL, DOI) and market disruptions.
+  - Focus on M&A, tech/AI advancements, market disruptors, broker/consultant news (Mercer, WTW, Aon), TPAs, sales/distribution Stakeholders.
+  - Look for regulatory changes (ERISA, PFML, DOL, DOI).
   - Look for new capabilities in claims administration, payment tech, revenue cycle, and commissions.
   - Every story MUST include hard numbers (dollars, percentages, or dates) and specific company names.
   - REPEAT PREVENTION: Do not cover the same core news items mentioned in the RECENTLY COVERED TOPICS list.

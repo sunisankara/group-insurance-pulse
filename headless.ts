@@ -4,6 +4,7 @@
  */
 import process from 'process';
 import { fetchAINews, generatePodcastScript, generateSegmentAudio } from './services/gemini.ts';
+import { auditPodcast, reRecordSegment, AuditResult } from './services/audit.ts';
 import { generateRSSFeed } from './utils/rss.ts';
 import { PodcastEpisode } from './types.ts';
 import * as fs from 'fs';
@@ -59,6 +60,44 @@ async function run() {
       fs.unlinkSync(pcmFile);
     }
 
+    console.log('Step 5: Quality Audit...');
+    let auditResult: AuditResult;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    do {
+      auditResult = await auditPodcast(filePath, script);
+      attempts++;
+
+      if (!auditResult.passed && attempts < maxAttempts) {
+        console.log(`Audit failed (attempt ${attempts}/${maxAttempts}):`, auditResult.issues.join(', '));
+
+        // For now, re-record all segments if any issue (can be optimized later)
+        console.log('Re-recording segments...');
+        if (fs.existsSync(pcmFile)) fs.unlinkSync(pcmFile);
+
+        for (let i = 0; i < segments.length; i++) {
+          console.log(`   -> Re-recording segment ${i+1}/${segments.length}...`);
+          const chunks = await generateSegmentAudio(segments[i]);
+          for (const chunk of chunks) {
+            fs.appendFileSync(pcmFile, Buffer.from(chunk, 'base64'));
+          }
+        }
+
+        console.log('Re-mastering audio...');
+        if (fs.existsSync(pcmFile)) {
+          execSync(`ffmpeg -y -f s16le -ar 24000 -ac 1 -i ${pcmFile} -acodec libmp3lame -ab 128k ${filePath}`);
+          fs.unlinkSync(pcmFile);
+        }
+      }
+    } while (!auditResult.passed && attempts < maxAttempts);
+
+    if (!auditResult.passed) {
+      console.log('Maximum audit attempts reached. Publishing with issues:', auditResult.issues.join(', '));
+    } else {
+      console.log('Audit passed!');
+    }
+
     // Update DB
     let episodes: PodcastEpisode[] = fs.existsSync(DB_PATH) ? JSON.parse(fs.readFileSync(DB_PATH, 'utf8')) : [];
     const newEpisode: PodcastEpisode = {
@@ -69,7 +108,8 @@ async function run() {
       audioUrl: filename,
       topics: report.topStories,
       mainStories: report.topStories,
-      status: 'published'
+      status: 'published',
+      auditResult: auditResult
     };
     episodes.unshift(newEpisode);
     fs.writeFileSync(DB_PATH, JSON.stringify(episodes, null, 2));
@@ -78,7 +118,7 @@ async function run() {
     const [owner, repoName] = repoPath.split('/');
     const baseUrl = `https://${owner}.github.io/${repoName}`;
 
-    console.log(`Step 5: Rebuilding RSS Feed...`);
+    console.log(`Step 6: Rebuilding RSS Feed...`);
     const rssContent = generateRSSFeed(episodes, `${baseUrl}/rss`); 
     fs.writeFileSync(path.join(RSS_DIR, 'feed.xml'), rssContent);
     

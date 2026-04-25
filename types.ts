@@ -9,6 +9,14 @@ export interface PodcastEpisode {
   topics: string[];
   mainStories: string[];
   status: 'draft' | 'generated' | 'published';
+  auditResult?: {
+    passed: boolean;
+    issues: string[];
+    duration?: number;
+    voiceConsistency?: boolean;
+    hasRepeats?: boolean;
+    hasHeadlines?: boolean;
+  };
 }
 
 export enum GenerationStep {
