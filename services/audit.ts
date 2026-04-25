@@ -182,4 +182,3 @@ export async function reRecordSegment(script: string, segmentIndex: number): Pro
   console.log(`Re-recording segment ${segmentIndex + 1}...`);
   return await generateSegmentAudio(segment);
 }
-<parameter name="filePath">c:\Users\Sunisankara\OneDrive\Documents\GitHub\group-insurance-pulse\services\audit.ts
