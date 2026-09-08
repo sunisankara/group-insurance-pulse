@@ -1,5 +1,30 @@
 [
   {
+    "id": "1788877735088",
+    "date": "2026-09-08T14:31:32.686Z",
+    "title": "Real-time Group Insurance Intelligence Update",
+    "script": "(Sound of a dynamic, urgent news intro theme music)\n\n**Aria:** Welcome to Group Insurance Daily Pulse, your rapid-fire download of the market intelligence you need, delivered with analytical rigor. I’m Aria, the Actuary, dissecting the P&L and regulatory implications.\n\n**Dorian:** And I’m Dorian, the Distribution Expert, focusing on market trajectory, ROI, and the employee experience. Today, we’re cutting through the noise, bringing you the most impactful developments from the last 24-48 hours. Let’s dive straight in.\n\n---\n\n**Dorian:** Kicking us off, significant institutional confidence in the carrier space: Virginia Retirement Systems Et Al has made a new $18.10 million investment in Unum Group. They acquired 202,416 shares, establishing a new position valued at approximately $18,096,000, now owning roughly 0.13% of Unum. This is a clear signal of robust financial stability and strategic alignment for a carrier focused on core group life, disability, AD&D, critical illness, and hospital indemnity. Unum’s revenue for the quarter saw a 0.3% increase year-over-year, and they've maintained their FY 2026 EPS guidance between $8.60 and $8.90. Combine this with their previously authorized $1.00 billion share repurchase program, targeting up to 7% of their stock, and what you see is a firm committed to shareholder value and a reliable partner for brokers and employers. This sustained investor confidence suggests a stable ecosystem for product innovation and consistent service delivery.\n\n**Aria:** \"Stable ecosystem,\" Dorian, or a strategic deployment of capital with an eye on",
+    "audioUrl": "Group-Pulse-1788877735088.mp3",
+    "topics": [
+      "Real-time Group Insurance Intelligence Update"
+    ],
+    "mainStories": [
+      "Real-time Group Insurance Intelligence Update"
+    ],
+    "status": "published",
+    "auditResult": {
+      "passed": false,
+      "issues": [
+        "Duration 1 minutes is outside 10-15 minute range"
+      ],
+      "feedbackPrompt": "AUDIT FEEDBACK FOR NEXT GENERATION CYCLE:\n\nDURATION FEEDBACK: Episode too short (1 min). Expand content, add more analysis, deeper story context. Target 10-15 minutes (~2200 words).\n\nCONTENT REPETITION FEEDBACK: Detected repeated segments, phrases, or stories. Ensure every news item, transition, and point is unique and distinct. Do not echo previous episodes' content. Vary sentence structure and narrative flow.",
+      "duration": 50.112,
+      "voiceConsistency": true,
+      "hasRepeats": false,
+      "hasHeadlines": true
+    }
+  },
+  {
     "id": "1788796073708",
     "date": "2026-09-07T15:56:35.976Z",
     "title": "WTW Appoints Trevor Madden as Head of Captive and Insurance Management Solutions",
