@@ -1,5 +1,40 @@
 [
   {
+    "id": "1791480582421",
+    "date": "2026-10-08T17:33:27.323Z",
+    "title": "Principal Financial Group Completes Acquisition of Beam Benefits",
+    "script": "**HOST:** Welcome back to \"Group Insurance Daily Pulse,\" your rapid-fire, byte-sized dive into the most critical developments impacting our sector. I'm your host, Aria the Actuary, here with Dorian, our Distribution Expert.\n\n**ARIA:** And by \"critical developments,\" I mean the data points that truly move the needle on P&L, solvency, and regulatory exposure. No fluff, just hard numbers and their implications.\n\n**DORIAN:** Absolutely, Aria. From my vantage point, it's about identifying strategic plays, market share opportunities, and innovations driving employer value and employee experience. Let's jump straight in.\n\n**[TRANSITION]**\n\n**DORIAN:** Our lead story: **Principal Financial Group has completed its acquisition of Beam Benefits.** Finalized September 1st, 2026, this expands Principal's employee benefits business to over 25,000 small businesses. Beam's digital-first platform directly strengthens Principal's Benefits and Protection segment by simplifying benefits enrollment, quoting, and administration. This is a clear move for operational efficiency and enhanced client experience in the SMB market. Importantly, over 200 Beam employees and their leadership team have joined Principal, ensuring continuity of critical intellectual capital. This positions Principal for market share growth and a competitive edge through digital transformation.\n\n**ARIA:** \"Digital transformation,\" Dorian, or significant integration risk with potential goodwill write-down? My immediate focus is on merging disparate technology stacks, which rarely goes smoothly. What's the true cost of",
+    "audioUrl": "Group-Pulse-1791480582421.mp3",
+    "topics": [
+      "Principal Financial Group Completes Acquisition of Beam Benefits",
+      "Expanding Employee Benefits Portfolio",
+      "Report Reveals Significant Gap in Group Disability Coverage for Financial Services Executives",
+      "Fitch Affirms Sun Life Financial's 'A+' IDR and 'AA' IFS Ratings",
+      "Citing Strong Diversified Business",
+      "EXL Integrates Agentic AI to Revolutionize Insurance and Healthcare Workflows"
+    ],
+    "mainStories": [
+      "Principal Financial Group Completes Acquisition of Beam Benefits",
+      "Expanding Employee Benefits Portfolio",
+      "Report Reveals Significant Gap in Group Disability Coverage for Financial Services Executives",
+      "Fitch Affirms Sun Life Financial's 'A+' IDR and 'AA' IFS Ratings",
+      "Citing Strong Diversified Business",
+      "EXL Integrates Agentic AI to Revolutionize Insurance and Healthcare Workflows"
+    ],
+    "status": "published",
+    "auditResult": {
+      "passed": false,
+      "issues": [
+        "Duration 1 minutes is outside 10-15 minute range"
+      ],
+      "feedbackPrompt": "AUDIT FEEDBACK FOR NEXT GENERATION CYCLE:\n\nDURATION FEEDBACK: Episode too short (1 min). Expand content, add more analysis, deeper story context. Target 10-15 minutes (~2200 words).\n\nCONTENT REPETITION FEEDBACK: Detected repeated segments, phrases, or stories. Ensure every news item, transition, and point is unique and distinct. Do not echo previous episodes' content. Vary sentence structure and narrative flow.",
+      "duration": 86.808,
+      "voiceConsistency": true,
+      "hasRepeats": false,
+      "hasHeadlines": true
+    }
+  },
+  {
     "id": "1791393961886",
     "date": "2026-10-07T17:41:08.278Z",
     "title": "BCS Financial Expands EssentialCare Suite with New Group Life and Disability Offerings",
