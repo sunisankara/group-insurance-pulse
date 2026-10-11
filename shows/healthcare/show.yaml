@@ -1,0 +1,27 @@
+id: healthcare
+title: Healthcare Daily Pulse
+feedTitle: Healthcare Daily Pulse
+author: Sundaram Labs
+email: broadcast@sundaramlabs.ai
+summary: Your daily conversational briefing on US healthcare business news — payors, providers, policy, and health tech — for senior industry leaders.
+description: Everything healthcare leaders need to know, in 15 minutes or less.
+categories:
+  - Business
+  - Health & Fitness
+coverFile: cover.jpg
+language: en-us
+hosts:
+  # Distinct voice pair from the group-insurance show so the two podcasts
+  # never sound like the same two people.
+  - name: Alex
+    voice: Charon
+  - name: Sam
+    voice: Aoede
+ttsModel: gemini-2.5-flash-preview-tts
+textModel: gemini-2.5-flash
+targetMinutes: 15
+wordsPerMinute: 150
+# New feed path for this show (one-time Spotify dashboard update at cutover):
+# https://sunisankara.github.io/group-insurance-pulse/rss/healthcare/feed.xml
+rssDir: rss/healthcare
+scheduleCron: '40 10 * * 1-5'

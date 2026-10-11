@@ -1,20 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Pulse Engine
 
-# Run and deploy your AI Studio app
+Single codebase for **Group Insurance Daily Pulse** and **Healthcare Daily Pulse**.
+One shared engine, per-show configuration — no more duplicated code drifting apart.
 
-This contains everything you need to run your app locally.
+## Layout
 
-View your app in AI Studio: https://ai.studio/apps/drive/1eYqftW2a4m_dpu68VCNHSu2uv_MPe5dJ
+```
+engine/            # shared pipeline: news recall → ranking → script → TTS → audit → RSS
+shows/
+  group-insurance/ # show.yaml, hosts.md (character bibles), lenses.md, news.md
+  healthcare/      # show.yaml, hosts.md, lenses.md, news.md
+scripts/           # prune-audio.mjs — keeps the repo from growing forever
+.github/workflows/ # pulse-group-insurance.yml, pulse-healthcare.yml (thin wrappers)
+rss/               # group-insurance feed (URL unchanged) + episodes.json
+rss/healthcare/    # healthcare feed
+```
 
-## Run Locally
+## What changed vs the old code
 
-**Prerequisites:**  Node.js
+- **Voice consistency**: one TTS call per story segment instead of per 1000-char
+  chunk — this was the root cause of voices drifting mid-episode.
+- **Distinct voices per show**: group keeps Aria=Kore / Dorian=Puck; healthcare
+  moves to Alex=Charon / Sam=Aoede.
+- **Character bibles** (`hosts.md`): backstory, speech patterns, how the duo argues.
+- **Lens rotation** (`lenses.md`): the ranker assigns each story an analytical lens
+  (CFO, Regulator, Broker, …) so episodes stop being the same two perspectives.
+- **Two-stage news**: broad recall (10–12 candidates) → explicit rubric ranking → top 5.
+  Also fixes the date filter breaking on the 1st of each month.
+- **Text-based audit**: no more uploading the finished MP3 to Gemini twice per
+  episode; duration estimate, speaker labels, cross-segment repeat detection, all
+  on the script text. On failure the *script* is regenerated (the old loop
+  re-recorded identical audio, which could never fix anything).
+- **Repo hygiene**: `.gitignore` for temp PCM files, MP3 pruning (keeps 30 newest
+  per feed — Spotify already caches the rest), single workflow per show, dry-run
+  mode actually wired up (`IS_DRY_RUN=true`), non-zero exit on failure.
 
+## Run locally
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm ci
+npx tsx engine/run.ts --show group-insurance --dry-run   # script only, no audio
+API_KEY=... npx tsx engine/run.ts --show healthcare      # full run
+npm run typecheck && npx tsx smoke-test.ts               # tests
+```
+
+## Test in GitHub Actions without publishing
+
+Actions → "Daily Pulse — Group Insurance" → Run workflow → `dry_run: true`.
+The script prints to the run log; nothing is synthesized or committed.

@@ -1,7 +1,0 @@
-{
-  "name": "AI Daily Pulse Podcast Generator",
-  "description": "An automated system to generate a daily 2-person 15-minute AI news podcast using Gemini's search grounding and multi-speaker TTS.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}
