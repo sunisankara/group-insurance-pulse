@@ -48,8 +48,17 @@ async function run() {
   console.log('Step 2: Ranking stories (8 candidates, hard-deduped to 5)...');
   const ranked = await rankStories(cfg, candidates, 8);
   if (ranked.length === 0) throw new Error('Ranking returned no stories');
-  const stories = dedupeStories(ranked, getRecentCorpus(cfg.rssDir)).slice(0, 5);
-  if (stories.length === 0) throw new Error('All ranked stories were repeats of the last 7 days');
+  const fresh = dedupeStories(ranked, getRecentCorpus(cfg.rssDir));
+  // The show must go on: if dedup leaves fewer than 3, refill from the
+  // dropped repeats in rank order (loud warning) rather than failing the day.
+  let stories = fresh.slice(0, 5);
+  if (stories.length < 3) {
+    const dropped = ranked.filter((r) => !fresh.includes(r));
+    const need = Math.min(3 - stories.length, dropped.length);
+    stories = [...stories, ...dropped.slice(0, need)];
+    console.log(`WARNING: only ${fresh.length} fresh stories; using ${need} recent repeat(s) to fill the episode.`);
+  }
+  if (stories.length === 0) throw new Error('Ranking returned no stories');
   console.log('Ranked:', stories.map((s) => `${s.rank}. ${s.headline} [${s.lens}]`).join('\n'));
 
   console.log('Step 3: Generating script...');
