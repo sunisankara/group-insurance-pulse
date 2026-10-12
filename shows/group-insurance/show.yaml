@@ -1,0 +1,26 @@
+id: group-insurance
+title: Group Insurance Daily Pulse
+feedTitle: Group Insurance Daily Pulse
+author: Sundaram Labs
+email: broadcast@sundaramlabs.ai
+summary: Your daily conversational deep dive into Group Insurance news, M&A, regulation, and technology — for senior leaders at US carriers.
+description: Daily analysis of Group Life, Disability, and Voluntary Benefits for carrier executives, brokers, and consultants.
+categories:
+  - Business
+  - Technology
+coverFile: cover.jpg
+language: en-us
+hosts:
+  - name: Aria
+    voice: Kore
+  - name: Dorian
+    voice: Puck
+ttsModel: gemini-2.5-flash-preview-tts
+textModel: gemini-2.5-flash
+targetMinutes: 15
+wordsPerMinute: 150
+# NOTE: 'rss' keeps the existing feed URL identical:
+# https://sunisankara.github.io/group-insurance-pulse/rss/feed.xml
+# Existing Spotify subscribers are unaffected by the migration.
+rssDir: rss
+scheduleCron: '10 10 * * 1-5'
