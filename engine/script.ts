@@ -70,6 +70,7 @@ CONVERSATION RULES:
 - The two hosts genuinely disagree sometimes. Let them interrupt, push back, concede points, and land somewhere interesting. No both-sides mush.
 - Vary the rhythm: short punchy exchanges for fast news, longer analytical stretches for the big story.
 - Cold open: ${open}. Then a one-line show greeting naming the date.
+- Each story segment MUST open with its headline stated plainly (so a listener knows what the story is) before any analysis or banter.
 - Between stories, put [TRANSITION] on its own line.
 - Close with a 2-3 line sign-off that ties the day together — vary it, never the same sign-off twice.
 - STRICT: only use the stories below. Do not invent stories, companies, or numbers.

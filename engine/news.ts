@@ -156,6 +156,7 @@ TASK: Rank the candidates and select the top ${keep} stories that matter MOST to
 4. Breadth — does it affect many carriers / the whole market, not one niche player?
 
 Drop incremental press-release fluff and vendor announcements with no hard numbers.
+IMPORTANT: return EXACTLY ${keep} ranked stories, no fewer. If fewer than ${keep} are strong, include the next-best candidates anyway (weakest last) — a short list is a failure.
 
 OUTPUT FORMAT — for each selected story, in rank order:
 [RANK n]
@@ -173,7 +174,9 @@ Do not add any other text.`;
       config: { temperature: 0.4, maxOutputTokens: 6000 },
     })
   );
-  return parseRanked(response.text || '');
+  const stories = parseRanked(response.text || '');
+  console.log(`   (ranker returned ${stories.length}/${keep} stories)`);
+  return stories;
 }
 
 export function parseRanked(text: string): RankedStory[] {
@@ -181,7 +184,7 @@ export function parseRanked(text: string): RankedStory[] {
   const blocks = text.split(/\[RANK\s*\d+\]/i).filter((b) => b.trim());
   blocks.forEach((block, i) => {
     const get = (label: string) => {
-      const m = block.match(new RegExp(`${label}:\\s*([\\s\\S]*?)(?=\\n[A-Z]+:|$)`, ''));
+      const m = block.match(new RegExp(`${label}:\\s*([\\s\\S]*?)(?=\\n[A-Z]+:|$)`, 'i'));
       return m ? m[1].trim() : '';
     };
     const headline = get('HEADLINE');
