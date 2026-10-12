@@ -25,19 +25,74 @@ export function newsWindow(now: Date = new Date()): { day1: string; day2: string
   return { day1: fmt(yesterday), day2: fmt(now) };
 }
 
-function recentTopics(rssDir: string, count = 15): string {
+function recentStoryCorpus(rssDir: string, episodes = 5): string[] {
   try {
     const epPath = path.join(process.cwd(), rssDir, 'episodes.json');
-    if (!fs.existsSync(epPath)) return '';
+    if (!fs.existsSync(epPath)) return [];
     const eps = JSON.parse(fs.readFileSync(epPath, 'utf8'));
-    const r = eps
-      .slice(0, count)
-      .map((e: any) => e.title + (e.mainStories ? ': ' + e.mainStories.join(', ') : ''))
-      .join(' | ');
-    return r ? `RECENTLY COVERED TOPICS (DO NOT REPEAT unless a major new development): ${r}` : '';
+    return eps
+      .slice(0, episodes)
+      .map((e: any) => [e.title, ...(e.mainStories || [])].join(' '))
+      .filter((s: string) => s.trim());
   } catch {
-    return '';
+    return [];
   }
+}
+
+/** Exported so run.ts can hard-dedupe ranked stories against the same corpus. */
+export function getRecentCorpus(rssDir: string): string[] {
+  return recentStoryCorpus(rssDir, 5); // 5 weekday episodes ~= 7-day window
+}
+
+function recentTopics(rssDir: string): string {
+  const r = recentStoryCorpus(rssDir, 5).join(' | ');
+  return r ? `RECENTLY COVERED TOPICS (DO NOT REPEAT unless a major new development): ${r}` : '';
+}
+
+/** Generic industry words that must not count as "same story" evidence. */
+const STOP = new Set(
+  `a an the and or for with from that this will its are was were has have had been being into over under after before between during through about across per via among within without than then also as at by in of on to up
+   insurance insurer insurers carrier carriers group health healthcare plan plans benefit benefits policy policies coverage market markets industry business company companies corporate
+   announce announced announces announcement launch launched launches expand expands expansion report reported reports quarter quarterly earnings revenue revenues growth deal partnership platform digital technology tech data executive executives leadership appoints appointed named names chief officer officers board merger acquisition acquire acquires acquired sell sells sale stake billion million percent guidance outlook forecast update latest amid`.split(/\s+/)
+);
+
+function sigTokens(s: string): Set<string> {
+  return new Set(
+    s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter((t) => t.length >= 4 && !STOP.has(t))
+  );
+}
+
+/**
+ * Hard 7-day dedup: drop a story if it shares a distinctive token (len>=5)
+ * AND at least 2 significant tokens with any recent story. This catches
+ * "variation of the same story" rewrites (e.g. the Prudential repeat) while
+ * letting genuinely different developments from the same company through,
+ * and it never confuses two carriers' earnings reports.
+ */
+function isRepeat(headline: string, facts: string, corpus: string[]): boolean {
+  const a = sigTokens(headline + ' ' + facts);
+  if (a.size === 0) return false;
+  return corpus.some((c) => {
+    const b = sigTokens(c);
+    const inter = [...a].filter((t) => b.has(t));
+    const distinctive = inter.filter((t) => t.length >= 5);
+    return inter.length >= 2 && distinctive.length >= 1;
+  });
+}
+
+export function dedupeStories(stories: RankedStory[], recentCorpus: string[]): RankedStory[] {
+  const kept: RankedStory[] = [];
+  const seen = [...recentCorpus];
+  for (const s of stories) {
+    if (isRepeat(s.headline, s.facts, seen)) {
+      console.log(`   x Dropped repeat: "${s.headline}"`);
+      continue;
+    }
+    kept.push(s);
+    seen.push(s.headline + ' ' + s.facts); // also dedupe within the episode
+  }
+  return kept;
 }
 
 const dateString = (now: Date) =>

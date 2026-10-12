@@ -12,7 +12,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { Buffer } from 'buffer';
 import { loadShowConfig } from './config.js';
-import { recallCandidates, rankStories } from './news.js';
+import { recallCandidates, rankStories, getRecentCorpus, dedupeStories } from './news.js';
 import { generateScript, splitSegments } from './script.js';
 import { synthesizeSegment } from './voices.js';
 import { auditScript } from './audit.js';
@@ -45,9 +45,11 @@ async function run() {
   const candidates = await recallCandidates(cfg);
   if (!candidates.trim()) throw new Error('News recall returned empty');
 
-  console.log('Step 2: Ranking stories...');
-  const stories = await rankStories(cfg, candidates, 5);
-  if (stories.length === 0) throw new Error('Ranking returned no stories');
+  console.log('Step 2: Ranking stories (8 candidates, hard-deduped to 5)...');
+  const ranked = await rankStories(cfg, candidates, 8);
+  if (ranked.length === 0) throw new Error('Ranking returned no stories');
+  const stories = dedupeStories(ranked, getRecentCorpus(cfg.rssDir)).slice(0, 5);
+  if (stories.length === 0) throw new Error('All ranked stories were repeats of the last 7 days');
   console.log('Ranked:', stories.map((s) => `${s.rank}. ${s.headline} [${s.lens}]`).join('\n'));
 
   console.log('Step 3: Generating script...');

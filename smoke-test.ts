@@ -1,5 +1,5 @@
 import { loadShowConfig } from './engine/config.js';
-import { parseRanked, newsWindow } from './engine/news.js';
+import { parseRanked, newsWindow, dedupeStories } from './engine/news.js';
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
@@ -51,6 +51,18 @@ const dup = Array.from({length: 30}, () => `Aria: Fresh analysis point here with
   + '\n[TRANSITION]\n' + dupStory;
 const aDup = auditScript(gi, dup);
 ok('audit catches duplicated story', !aDup.passed && aDup.issues.some(i => i.includes('duplicated story')));
+
+// 6b. Hard 7-day dedup: variation-of-same-story is dropped, different
+// developments from the same company and two carriers' earnings both survive
+const recent = ['Prudential launches AI underwriting for group disability'];
+const mk = (h: string, f: string) => ({ rank: 1, headline: h, facts: f, context: '', lens: 'The CFO', source: '' });
+const prudVar = mk('Prudential expands AI underwriting platform to voluntary benefits', 'Prudential is rolling its underwriting engine into voluntary products');
+const prudNew = mk('Prudential acquires a dental carrier for $800M', 'Prudential announced an $800M acquisition of a dental carrier');
+const earnA = mk('MetLife Q3 earnings beat expectations', 'MetLife reported Q3 earnings with revenue up 6 percent');
+const earnB = mk('Prudential Q3 earnings miss on investment losses', 'Prudential posted Q3 earnings below estimates on investment losses');
+ok('dedup drops Prudential variation', dedupeStories([prudVar], recent).length === 0);
+ok('dedup keeps genuinely new Prudential development', dedupeStories([prudNew], recent).length === 1);
+ok('dedup keeps both carriers earnings', dedupeStories([earnA, earnB], []).length === 2);
 
 // 6. RSS feed builds with per-show metadata
 const feed = generateRSSFeed([{ id: '1', date: new Date().toISOString(), title: 'Test & Title', script: 'Aria: hello', audioUrl: 'rss/ep.mp3', topics: [], mainStories: ['a & b'], status: 'published', auditIssues: [] }], gi, 'https://sunisankara.github.io/group-insurance-pulse/rss');
