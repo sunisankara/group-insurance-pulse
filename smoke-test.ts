@@ -1,5 +1,5 @@
 import { loadShowConfig } from './engine/config.js';
-import { parseRanked, newsWindow, dedupeStories } from './engine/news.js';
+import { parseRanked, newsWindow, dedupeStories, extractLensNames } from './engine/news.js';
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
@@ -63,6 +63,13 @@ const earnB = mk('Prudential Q3 earnings miss on investment losses', 'Prudential
 ok('dedup drops Prudential variation', dedupeStories([prudVar], recent).length === 0);
 ok('dedup keeps genuinely new Prudential development', dedupeStories([prudNew], recent).length === 1);
 ok('dedup keeps both carriers earnings', dedupeStories([earnA, earnB], []).length === 2);
+
+// 6c. Lens names extract from lenses.md for the rank prompt
+const giLenses = extractLensNames(gi.lensesDoc);
+ok('lens names extracted', giLenses.includes('The CFO') && giLenses.includes('The Actuary') && giLenses.length >= 8);
+// LENS parses even when the model writes it lowercase
+const lower = parseRanked(`[RANK 1]\nHEADLINE: X\nlens: The Regulator\nFACTS: y\nCONTEXT: z`);
+ok('lens label case-insensitive', lower.length === 1 && lower[0].lens === 'The Regulator');
 
 // 6. RSS feed builds with per-show metadata
 const feed = generateRSSFeed([{ id: '1', date: new Date().toISOString(), title: 'Test & Title', script: 'Aria: hello', audioUrl: 'rss/ep.mp3', topics: [], mainStories: ['a & b'], status: 'published', auditIssues: [] }], gi, 'https://sunisankara.github.io/group-insurance-pulse/rss');

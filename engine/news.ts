@@ -140,14 +140,21 @@ RULES:
  * Stage 2 — rank: score candidates on an explicit rubric and return the
  * top stories with an assigned analytical lens for each.
  */
+/** Lens names from a lenses.md doc ("- **The Name** — ..."). Exported for tests. */
+export function extractLensNames(lensesDoc: string): string[] {
+  return [...lensesDoc.matchAll(/-\s*\*\*(.+?)\*\*/g)].map((m) => m[1].trim());
+}
+
 export async function rankStories(cfg: ShowConfig, candidates: string, keep = 5): Promise<RankedStory[]> {
+  const lensNames = extractLensNames(cfg.lensesDoc);
+  const lensList = lensNames.length ? lensNames.join(', ') : 'general';
   const prompt = `You are the executive producer of "${cfg.title}", a daily briefing for senior industry leaders.
 
 CANDIDATE STORIES (from the last 48h):
 ${candidates}
 
-AVAILABLE ANALYTICAL LENSES:
-${cfg.lensesDoc}
+AVAILABLE LENSES — for each story copy EXACTLY one of these names, the most revealing angle:
+${lensList}
 
 TASK: Rank the candidates and select the top ${keep} stories that matter MOST to senior leaders. Score each on:
 1. P&L / business impact — does this move revenue, margin, or risk?
@@ -158,12 +165,12 @@ TASK: Rank the candidates and select the top ${keep} stories that matter MOST to
 Drop incremental press-release fluff and vendor announcements with no hard numbers.
 IMPORTANT: return EXACTLY ${keep} ranked stories, no fewer. If fewer than ${keep} are strong, include the next-best candidates anyway (weakest last) — a short list is a failure.
 
-OUTPUT FORMAT — for each selected story, in rank order:
+OUTPUT FORMAT — for each selected story, in rank order, with EXACTLY these labeled lines:
 [RANK n]
 HEADLINE: [Title]
+LENS: [one name copied exactly from the available lenses list]
 FACTS: [2-4 bullets: numbers, companies, so-what]
 CONTEXT: [Why this matters — 2-3 sentences for a senior leader]
-LENS: [Exactly one lens name from the list above, the most revealing angle for this story]
 
 Do not add any other text.`;
 
@@ -176,6 +183,10 @@ Do not add any other text.`;
   );
   const stories = parseRanked(response.text || '');
   console.log(`   (ranker returned ${stories.length}/${keep} stories)`);
+  if (stories.some((s) => !s.lens)) {
+    console.log('   (lens missing on some stories; raw ranker output follows)');
+    console.log((response.text || '').slice(0, 3000));
+  }
   return stories;
 }
 
