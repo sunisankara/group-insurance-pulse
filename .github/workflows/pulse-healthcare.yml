@@ -57,3 +57,4 @@ jobs:
             git pull origin main --rebase
             git push origin main
           fi
+# cron re-registration 2026-10-13 (no functional change)
