@@ -2,6 +2,16 @@ import { ShowConfig, EpisodeRecord } from './types.js';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/** Seconds -> "m:ss" (or "h:mm:ss") as podcast apps expect. */
+function formatDuration(totalSec: number): string {
+  const s = Math.max(0, Math.round(totalSec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+  return `${h > 0 ? `${h}:` : ''}${mm}:${String(sec).padStart(2, '0')}`;
+}
+
 export function generateRSSFeed(episodes: EpisodeRecord[], cfg: ShowConfig, baseUrl: string): string {
   const lastBuildDate = new Date().toUTCString();
   const cleanBase = baseUrl.replace(/\/$/, '');
@@ -21,9 +31,9 @@ export function generateRSSFeed(episodes: EpisodeRecord[], cfg: ShowConfig, base
       <content:encoded><![CDATA[${storyList}${formattedScript}]]></content:encoded>
       <pubDate>${new Date(e.date).toUTCString()}</pubDate>
       <guid isPermaLink="false">${esc(e.id)}</guid>
-      <enclosure url="${esc(audioLink)}" length="0" type="audio/mpeg"/>
+      <enclosure url="${esc(audioLink)}" length="${e.audioBytes && e.audioBytes > 0 ? e.audioBytes : 0}" type="audio/mpeg"/>
       <itunes:author>${esc(cfg.feedTitle)}</itunes:author>
-      <itunes:duration>${cfg.targetMinutes}:00</itunes:duration>
+      <itunes:duration>${e.durationSec && e.durationSec > 0 ? formatDuration(e.durationSec) : `${cfg.targetMinutes}:00`}</itunes:duration>
       <itunes:explicit>no</itunes:explicit>
     </item>`;
     })

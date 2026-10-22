@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
-import { ShowConfig, RankedStory } from './types.js';
+import { ShowConfig, RankedStory, EpisodeRecord } from './types.js';
 
 function ai() {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -31,9 +31,22 @@ function recentStoryCorpus(rssDir: string, episodes = 5): string[] {
     if (!fs.existsSync(epPath)) return [];
     const eps = JSON.parse(fs.readFileSync(epPath, 'utf8'));
     return eps
+      .filter((e: any) => !e.digest) // digests recap old stories; they must not block fresh coverage
       .slice(0, episodes)
       .map((e: any) => [e.title, ...(e.mainStories || [])].join(' '))
       .filter((s: string) => s.trim());
+  } catch {
+    return [];
+  }
+}
+
+/** Full recent episode records (newest first) — audit history, continuity, digest material. */
+export function getRecentEpisodes(rssDir: string, n = 5): EpisodeRecord[] {
+  try {
+    const epPath = path.join(process.cwd(), rssDir, 'episodes.json');
+    if (!fs.existsSync(epPath)) return [];
+    const eps = JSON.parse(fs.readFileSync(epPath, 'utf8'));
+    return Array.isArray(eps) ? eps.slice(0, n) : [];
   } catch {
     return [];
   }
@@ -130,7 +143,7 @@ RULES:
     ai().models.generateContent({
       model: cfg.textModel,
       contents: prompt,
-      config: { tools: [{ googleSearch: {} }] },
+      config: { tools: [{ googleSearch: {} }], thinkingConfig: { thinkingBudget: 0 } },
     })
   );
   return response.text || '';
@@ -178,7 +191,7 @@ Do not add any other text.`;
     ai().models.generateContent({
       model: cfg.textModel,
       contents: prompt,
-      config: { temperature: 0.4, maxOutputTokens: 6000 },
+      config: { temperature: 0.4, maxOutputTokens: 6000, thinkingConfig: { thinkingBudget: 0 } },
     })
   );
   const stories = parseRanked(response.text || '');

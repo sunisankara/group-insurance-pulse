@@ -24,8 +24,10 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Pr
  * energy consistent; speaker labels in the text route lines to voices.
  */
 export async function synthesizeSegment(cfg: ShowConfig, segmentText: string): Promise<string[]> {
-  // Strip bracketed stage tags like [TRANSITION]; keep "Name:" speaker labels.
-  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').trim();
+  // Strip bracketed stage tags like [TRANSITION] and markdown emphasis
+  // (**bold** around spoken headlines) — neither should ever reach the TTS
+  // model as literal text. Keep "Name:" speaker labels.
+  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*\*/g, '').trim();
   if (!cleanText) return [];
 
   const hostNames = cfg.hosts.map((h) => h.name);
