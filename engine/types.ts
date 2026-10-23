@@ -46,6 +46,12 @@ export interface EpisodeRecord {
   mainStories: string[];
   status: string;
   auditIssues: string[];
+  /** Real MP3 size in bytes (backfilled at publish; legacy items may lack it). */
+  audioBytes?: number;
+  /** Real MP3 duration in seconds (backfilled at publish). */
+  durationSec?: number;
+  /** True for digest/look-back fallback episodes — excluded from the story dedup corpus. */
+  digest?: boolean;
 }
 
 export interface AuditResult {

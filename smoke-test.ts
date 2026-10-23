@@ -38,7 +38,8 @@ ok('splitSegments', splitSegments(script).length === 2);
 // 5. audit catches problems, passes good script
 const topics = ['loss ratios in group disability', 'broker consolidation trends', 'PFML mandate expansion', 'claims automation pilots', 'reinsurance treaty renewals', 'enrollment platform upgrades'];
 const good = Array.from({length: 60}, (_, i) =>
-  `Aria: On ${topics[i % topics.length]}, the development numbered ${i} deserves scrutiny because the underlying economics shift materially for carriers.\nDorian: From the field, item ${i} lands differently — distributors I talk to see a practical opening here worth testing this quarter.`).join('\n');
+  `Aria: On ${topics[i % topics.length]}, the development numbered ${i} deserves scrutiny because the underlying economics shift materially for carriers.\nDorian: From the field, item ${i} lands differently — distributors I talk to see a practical opening here worth testing this quarter.`).join('\n')
+  + '\nAria: Thanks for joining us on Group Insurance Daily Pulse.\nDorian: We\'ll be back tomorrow — see you then.';
 const aGood = auditScript(gi, good);
 ok('audit passes decent script', aGood.passed);
 const bad = 'Aria: hi.\n'.repeat(50);
@@ -51,6 +52,19 @@ const dup = Array.from({length: 30}, () => `Aria: Fresh analysis point here with
   + '\n[TRANSITION]\n' + dupStory;
 const aDup = auditScript(gi, dup);
 ok('audit catches duplicated story', !aDup.passed && aDup.issues.some(i => i.includes('duplicated story')));
+
+// 5b. Oct 2026 regressions: truncated script (mid-sentence, no sign-off) must
+// fail; AI-tell phrases must fail; Dorian's room anecdote repeated from a
+// recent episode must fail.
+const truncated = good.slice(0, good.length - 400) + ' and that is why brokers are so';
+ok('audit fails truncated script', !auditScript(gi, truncated).passed);
+const withTell = good.replace('deserves scrutiny', 'deserves scrutiny — moreover, it is a landscape worth mapping');
+ok('audit fails AI-tell phrasing', !auditScript(gi, withTell).passed);
+const roomToday = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
+const roomRecent = ['Aria: Earlier.\nDorian: I was in a room last week where this exact fight played out.'];
+ok('audit fails repeated room anecdote', !auditScript(gi, roomToday, roomRecent).passed);
+const roomFresh = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
+ok('audit allows room anecdote when not recent', auditScript(gi, roomFresh, []).passed || auditScript(gi, roomFresh, ['Aria: A quiet day.\nDorian: Agreed, nothing to add.']).passed);
 
 // 6b. Hard 7-day dedup: variation-of-same-story is dropped, different
 // developments from the same company and two carriers' earnings both survive
