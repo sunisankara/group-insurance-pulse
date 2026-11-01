@@ -57,7 +57,7 @@ export function conversationRules(cfg: ShowConfig): string {
 - Each host commits to at least one falsifiable take per episode ("this closes by Q2", "that growth number is borrowing from next year"). No both-sides mush, no hedging every claim into fog.
 - NEVER use these phrases: "delve", "moreover", "furthermore", "it's important to note", "in conclusion", "ever-evolving", "in today's fast-paced", "navigate the complexities". Do not frame with "on one hand ... on the other hand".
 - Numbers get said the way people say them, with units, and hosts react to them before analysing them.
-- Close with a 2-3 line sign-off that ties the day together, spoken by both hosts. The sign-off is the literal end of the script — nothing after it, and the final line ends with a period. Vary the sign-off; never reuse yesterday's.`;
+- Close with a 2-3 line sign-off that ties the day together, spoken by both hosts. The sign-off is the literal end of the script — nothing after it, and the final line ends with a period. The closing MUST include the words "thanks for listening" (work them in naturally, e.g. "That's the pulse for today — thanks for listening."). Vary the rest of the sign-off wording; never reuse yesterday's.`;
 }
 
 export interface ContinuityContext {
@@ -140,6 +140,14 @@ export async function generateScript(
     ? `\n\nFEEDBACK FROM A FAILED ATTEMPT — apply it strictly:\n${feedbackPrompt}\n`
     : '';
 
+  // On thin-news days the dedup may leave only 2-3 stories; without an
+  // explicit depth push the model wraps up at ~1,500 words and fails the
+  // duration band (a root cause of the Oct 26-30 Group Insurance outage).
+  const depthNote =
+    stories.length <= 3
+      ? `\n\nNOTE: only ${stories.length} stories today — go DEEPER on each one (history, stakes, the strongest disagreement between you, what to watch next) to reach the full target length. Depth, not padding: never invent facts, companies, or numbers beyond the stories below.`
+      : '';
+
   const prompt = `Write a ${cfg.targetMinutes}-minute conversational podcast script for "${cfg.title}" (${dateStr} edition).
 
 TARGET LENGTH: ~${targetWords} words of dialogue. Hit the target — a script that runs short or stops early is a failed script. Pace yourself across all the stories so the last story gets as much room as the first.
@@ -156,7 +164,7 @@ ${conversationRules(cfg)}
 - STRICT: only use the stories below. Do not invent stories, companies, or numbers.
 ${continuityBlock(continuity)}
 STORIES (each has an assigned analytical lens — argue that story primarily through that lens):
-${storiesBlock(stories)}
+${storiesBlock(stories)}${depthNote}
 ${feedbackSection}`;
 
   return generateText(cfg, prompt);

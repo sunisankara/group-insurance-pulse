@@ -66,6 +66,16 @@ ok('audit fails repeated room anecdote', !auditScript(gi, roomToday, roomRecent)
 const roomFresh = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
 ok('audit allows room anecdote when not recent', auditScript(gi, roomFresh, []).passed || auditScript(gi, roomFresh, ['Aria: A quiet day.\nDorian: Agreed, nothing to add.']).passed);
 
+// 5c. Oct 31 regressions (the five-day GI outage): a digest script recycles
+// recent episodes BY DESIGN — it must fail the recycled-phrase check as a
+// fresh script and pass it in digest mode. And a sign-off followed by one
+// short closing segment must still count as signed off.
+const aRecycledFresh = auditScript(gi, good, [good]);
+ok('fresh audit fails wholesale recycling', !aRecycledFresh.passed && aRecycledFresh.issues.some(i => i.includes('recycled')));
+ok('digest audit exempt from recycling check', auditScript(gi, good, [good], { digest: true }).passed);
+const trailedOff = good + '\n[TRANSITION]\nAria: Quick final note — the enrollment window opens Monday.\nDorian: Brokers, set your reminders tonight.';
+ok('sign-off counts within last 400 chars', auditScript(gi, trailedOff).passed);
+
 // 6b. Hard 7-day dedup: variation-of-same-story is dropped, different
 // developments from the same company and two carriers' earnings both survive
 const recent = ['Prudential launches AI underwriting for group disability'];

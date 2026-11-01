@@ -90,7 +90,7 @@ async function tryDigestScript(
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const script = await generateDigestScript(cfg, material, feedback);
-      const audit = auditScript(cfg, script, recentScripts);
+      const audit = auditScript(cfg, script, recentScripts, { digest: true });
       if (audit.passed) {
         console.log(`Digest script audit passed on attempt ${attempt} (~${audit.estimatedMinutes?.toFixed(1)} min estimated).`);
         return { script, audit, digest: true };

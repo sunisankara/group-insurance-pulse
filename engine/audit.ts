@@ -64,7 +64,12 @@ function ngrams(text: string, n: number): Set<string> {
   return out;
 }
 
-export function auditScript(cfg: ShowConfig, script: string, recentScripts: string[] = []): AuditResult {
+export function auditScript(
+  cfg: ShowConfig,
+  script: string,
+  recentScripts: string[] = [],
+  opts: { digest?: boolean } = {}
+): AuditResult {
   const issues: string[] = [];
   const segments = splitSegments(script);
   const hostNames = cfg.hosts.map((h) => h.name);
@@ -136,7 +141,13 @@ export function auditScript(cfg: ShowConfig, script: string, recentScripts: stri
   // Sign-offs take many natural shapes, including the classic radio
   // name-check close ("For Group Insurance Daily Pulse, I'm Aria").
   const nameCheck = new RegExp(`\\bi'?m (${hostNames.map((n) => n.toLowerCase()).join('|')})\\b`);
-  if (!SIGN_OFF_RES.some((re) => re.test(lastSegment)) && !nameCheck.test(lastSegment)) {
+  const hasSignOff = (text: string) => SIGN_OFF_RES.some((re) => re.test(text)) || nameCheck.test(text);
+  // Check the final segment; if the model adds one short closing line after
+  // the sign-off (splitting it into its own segment), also accept a sign-off
+  // inside the script's last ~400 characters — it is still effectively the
+  // end of the episode. Truncation stays guarded by the terminal-punctuation
+  // check above and the finishReason check in generateText.
+  if (!hasSignOff(lastSegment) && !hasSignOff(script.slice(-400).toLowerCase())) {
     issues.push('Final segment has no sign-off (thanks/closing line) — the episode would end abruptly');
   }
   // Inline **bold** around a spoken headline is cosmetic (stripped before
@@ -158,7 +169,14 @@ export function auditScript(cfg: ShowConfig, script: string, recentScripts: stri
 
   // 8. Cross-episode repetition: signature host devices and phrasing carried
   // over from recent episodes (the "same anecdote every day" problem).
-  if (recentScripts.length > 0) {
+  // DIGEST episodes are exempt: a digest recaps recent episodes by design,
+  // so overlap with them is its substance, not a defect. (This exemption is
+  // the Oct 31 fix: without it the digest fallback could never pass — it
+  // shared 126-485 phrases with the episodes it recapped, and a week of
+  // Group Insurance episodes was lost when fresh scripts also failed.)
+  // Every other check (duration, labels, completeness, AI-tells) still
+  // applies to digests.
+  if (!opts.digest && recentScripts.length > 0) {
     for (const [re, label] of SIGNATURE_FRAMES) {
       if (re.test(script) && recentScripts.some((s) => re.test(s))) {
         issues.push(`Host device ${label} also appeared in a recent episode — vary the grounding device today`);
@@ -166,7 +184,11 @@ export function auditScript(cfg: ShowConfig, script: string, recentScripts: stri
     }
     const yesterday = ngrams(recentScripts[0], 8);
     const shared = [...ngrams(script, 8)].filter((g) => yesterday.has(g)).length;
-    if (shared > 8) {
+    // Threshold 20 (was 8): when a story is legitimately refilled from the
+    // ranked list, its headline/facts phrasing alone shares ~9-18 8-grams
+    // with the episode that first covered it (Oct 26-30 logs). Wholesale
+    // copying runs 100+, so 20 still catches lazy rewrites.
+    if (shared > 20) {
       issues.push(`Detected ${shared} phrases recycled from the previous episode — fresh wording required`);
     }
   }
