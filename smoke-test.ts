@@ -1,8 +1,21 @@
-import { loadShowConfig } from './engine/config.js';
+import { loadShowConfig, resolveTtsProvider } from './engine/config.js';
 import { parseRanked, newsWindow, dedupeStories, extractLensNames } from './engine/news.js';
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
+import {
+  CHIRP_TTS_ENDPOINT,
+  CHIRP_SSML_TAGS,
+  applyPronunciations,
+  buildTurnSsml,
+  prosodyForHost,
+  parseTurns,
+  splitTurnText,
+  chirpSynthesizeSsml,
+  synthesizeSegmentChirp,
+  getChirpUsage,
+  resetChirpUsage,
+} from './engine/chirp.js';
 
 let pass = 0, fail = 0;
 const ok = (name: string, cond: boolean) => { cond ? pass++ : (fail++, console.log('FAIL:', name)); };
@@ -98,6 +111,104 @@ ok('lens label case-insensitive', lower.length === 1 && lower[0].lens === 'The R
 // 6. RSS feed builds with per-show metadata
 const feed = generateRSSFeed([{ id: '1', date: new Date().toISOString(), title: 'Test & Title', script: 'Aria: hello', audioUrl: 'rss/ep.mp3', topics: [], mainStories: ['a & b'], status: 'published', auditIssues: [] }], gi, 'https://sunisankara.github.io/group-insurance-pulse/rss');
 ok('rss escapes + title', feed.includes('Test &amp; Title') && feed.includes('<title>Group Insurance Daily Pulse</title>'));
+
+// 7. Chirp 3 HD provider: voice config + provider resolution
+ok('gi chirp voices', gi.hosts[0].chirpVoice === 'en-US-Chirp3-HD-Aoede' && gi.hosts[1].chirpVoice === 'en-US-Chirp3-HD-Fenrir');
+ok('hc chirp voices', hc.hosts[0].chirpVoice === 'en-US-Chirp3-HD-Puck' && hc.hosts[1].chirpVoice === 'en-US-Chirp3-HD-Zephyr');
+delete process.env.TTS_PROVIDER;
+ok('provider defaults to gemini', resolveTtsProvider(gi) === 'gemini');
+process.env.TTS_PROVIDER = 'chirp';
+ok('TTS_PROVIDER env enables chirp', resolveTtsProvider(gi) === 'chirp');
+ok('show config beats env default', resolveTtsProvider({ ...gi, ttsProvider: 'gemini' }) === 'gemini');
+delete process.env.TTS_PROVIDER;
+
+// 7b. SSML builder: pronunciations, breaks, escaping, tag-subset compliance
+const pron = applyPronunciations('fund your 401(k) and check the HMO before EBITDA at Aflac');
+ok('ssml sub for 401(k)', pron.includes('<sub alias="four oh one k">401(k)</sub>'));
+ok('ssml say-as for HMO', pron.includes('<say-as interpret-as="characters">HMO</say-as>'));
+ok('ssml sub for EBITDA', pron.includes('<sub alias="ee-bit-dah">EBITDA</sub>'));
+ok('ssml sub for Aflac', pron.includes('<sub alias="aff-lack">Aflac</sub>'));
+ok('ssml leaves lowercase prose alone', applyPronunciations('the hmo down the road') === 'the hmo down the road');
+const ssml = buildTurnSsml('First topic point.\n\nSecond topic point & more.', prosodyForHost(0));
+ok('ssml wraps in speak', ssml.startsWith('<speak>') && ssml.endsWith('</speak>'));
+ok('ssml break at paragraph transition', ssml.includes('<break time="650ms"/>'));
+ok('ssml escapes ampersand', ssml.includes('&amp;') && !ssml.includes(' & '));
+ok('ssml prosody per host', ssml.includes('<prosody rate="100%" pitch="+0.5st">') && buildTurnSsml('x', prosodyForHost(1)).includes('rate="97%"'));
+const tagsUsed = [...ssml.matchAll(/<\/?([a-z][a-z-]*)/g)].map((m) => m[1]);
+ok('ssml emits only chirp-supported tags', tagsUsed.length > 0 && tagsUsed.every((t) => CHIRP_SSML_TAGS.includes(t)));
+const turns = parseTurns('Aria: Hello there.\nDorian: Hi back.\nAria: Next point.', gi.hosts);
+ok('parseTurns routes lines to hosts', turns.length === 3 && turns[0].hostIndex === 0 && turns[1].hostIndex === 1 && turns[2].text === 'Next point.');
+const longChunks = splitTurnText('Word. '.repeat(900));
+ok('splitTurnText keeps requests under limit', longChunks.length >= 2 && longChunks.every((c) => c.length <= 3200));
+
+// 7c. Request shaping with mocked HTTP, WAV stripping, char accounting,
+// and the per-segment Gemini fallback on provider failure.
+function fakeWav(pcm: Buffer): Buffer {
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(1, 22); // mono
+  header.writeUInt32LE(24000, 24);
+  header.writeUInt32LE(48000, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+const testPcm = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+let captured: { url: string; init: any } | null = null;
+const mockOk = async (url: any, init: any) => {
+  captured = { url: String(url), init };
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({ audioContent: fakeWav(testPcm).toString('base64') }),
+    text: async () => '',
+  };
+};
+resetChirpUsage();
+const pcmOut = await chirpSynthesizeSsml('<speak>hello</speak>', 'en-US-Chirp3-HD-Aoede', {
+  fetchFn: mockOk as any,
+  apiKey: 'test-key',
+  sleep: async () => {},
+});
+ok('chirp returns raw pcm (wav header stripped)', pcmOut.equals(testPcm));
+ok('chirp posts to the cloud tts endpoint', captured !== null && captured.url === CHIRP_TTS_ENDPOINT);
+const sentBody = JSON.parse(captured!.init.body);
+ok(
+  'chirp request shaping (voice, language, LINEAR16 24kHz)',
+  sentBody.voice.name === 'en-US-Chirp3-HD-Aoede' &&
+    sentBody.voice.languageCode === 'en-US' &&
+    sentBody.audioConfig.audioEncoding === 'LINEAR16' &&
+    sentBody.audioConfig.sampleRateHertz === 24000
+);
+ok(
+  'chirp request carries ssml + api key header',
+  sentBody.input.ssml === '<speak>hello</speak>' && captured!.init.headers['X-Goog-Api-Key'] === 'test-key'
+);
+ok(
+  'chirp usage counts ssml characters',
+  getChirpUsage().characters === '<speak>hello</speak>'.length && getChirpUsage().calls === 1
+);
+const mockFail = async () => ({ ok: false, status: 500, json: async () => ({}), text: async () => 'boom' });
+const fbOut = await synthesizeSegmentChirp(gi, 'Aria: An HMO update for brokers today.', async () => ['gemini-audio'], {
+  fetchFn: mockFail as any,
+  apiKey: 'test-key',
+  sleep: async () => {},
+});
+ok('chirp failure falls back to gemini for the segment', fbOut.length === 1 && fbOut[0] === 'gemini-audio');
+ok('chirp fallback is counted', getChirpUsage().fallbacks === 1);
+const noneOut = await synthesizeSegmentChirp(gi, '[TRANSITION]', async () => ['should-not-happen'], {
+  fetchFn: mockFail as any,
+  apiKey: 'test-key',
+  sleep: async () => {},
+});
+ok('empty segment reaches neither provider', noneOut.length === 0 && getChirpUsage().fallbacks === 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
