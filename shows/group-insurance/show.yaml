@@ -20,6 +20,7 @@ hosts:
 # TTS provider: unset = Gemini, unless the TTS_PROVIDER env var is set
 # (TTS_PROVIDER=chirp makes Chirp 3 HD the default). Set ttsProvider here
 # to pin this show to one provider regardless of the environment.
+ttsProvider: chirp
 ttsModel: gemini-2.5-flash-preview-tts
 textModel: gemini-2.5-flash
 targetMinutes: 15
