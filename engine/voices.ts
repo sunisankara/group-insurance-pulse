@@ -1,6 +1,8 @@
 import { GoogleGenAI, Modality } from '@google/genai';
 import { ShowConfig } from './types.js';
 import { splitOversizedSegment } from './script.js';
+import { resolveTtsProvider } from './config.js';
+import { synthesizeSegmentChirp } from './chirp.js';
 
 function ai() {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -17,13 +19,38 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Pr
 }
 
 /**
- * Voice production — ONE TTS call per story segment (not per 1000-char
- * chunk). The old code made a separate API call for every 1000 characters,
- * and each call re-instantiated the voices, which is why voices drifted
- * mid-episode. A single call per segment keeps each voice's prosody and
- * energy consistent; speaker labels in the text route lines to voices.
+ * Entry point used by run.ts: synthesize one story segment with whichever
+ * provider the show resolves to (see resolveTtsProvider — show.yaml, then
+ * TTS_PROVIDER env, then Gemini). The Chirp path falls back to Gemini per
+ * segment on any failure; if Chirp is selected but GOOGLE_TTS_API_KEY is
+ * missing entirely, the whole run uses Gemini with one loud warning
+ * instead of a fallback storm.
  */
+let warnedMissingChirpKey = false;
+
 export async function synthesizeSegment(cfg: ShowConfig, segmentText: string): Promise<string[]> {
+  if (resolveTtsProvider(cfg) === 'chirp') {
+    if (!process.env.GOOGLE_TTS_API_KEY) {
+      if (!warnedMissingChirpKey) {
+        warnedMissingChirpKey = true;
+        console.log('WARNING: Chirp TTS selected but GOOGLE_TTS_API_KEY is not set; using Gemini TTS for this run.');
+      }
+      return synthesizeSegmentGemini(cfg, segmentText);
+    }
+    return synthesizeSegmentChirp(cfg, segmentText, (t) => synthesizeSegmentGemini(cfg, t));
+  }
+  return synthesizeSegmentGemini(cfg, segmentText);
+}
+
+/**
+ * Gemini voice production — ONE TTS call per story segment (not per
+ * 1000-char chunk). The old code made a separate API call for every 1000
+ * characters, and each call re-instantiated the voices, which is why voices
+ * drifted mid-episode. A single call per segment keeps each voice's
+ * prosody and energy consistent; speaker labels in the text route lines to
+ * voices.
+ */
+export async function synthesizeSegmentGemini(cfg: ShowConfig, segmentText: string): Promise<string[]> {
   // Strip bracketed stage tags like [TRANSITION] and markdown emphasis
   // (**bold** around spoken headlines) — neither should ever reach the TTS
   // model as literal text. Keep "Name:" speaker labels.

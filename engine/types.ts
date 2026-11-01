@@ -1,7 +1,10 @@
 export interface HostConfig {
   name: string;
   voice: string; // Gemini prebuilt voice name, e.g. 'Kore'
+  chirpVoice?: string; // Google Cloud TTS Chirp 3 HD voice name, e.g. 'en-US-Chirp3-HD-Aoede'
 }
+
+export type TtsProvider = 'gemini' | 'chirp';
 
 export interface ShowConfig {
   id: string; // 'group-insurance' | 'healthcare'
@@ -15,6 +18,8 @@ export interface ShowConfig {
   coverFile: string;
   language: string;
   hosts: HostConfig[]; // exactly 2
+  /** Per-show TTS provider override; when unset, TTS_PROVIDER env, then 'gemini'. */
+  ttsProvider?: TtsProvider;
   ttsModel: string;
   textModel: string;
   targetMinutes: number;

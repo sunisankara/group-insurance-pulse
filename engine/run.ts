@@ -20,6 +20,7 @@ import { loadShowConfig } from './config.js';
 import { recallCandidates, rankStories, getRecentCorpus, dedupeStories } from './news.js';
 import { generateScript, splitSegments, ContinuityContext } from './script.js';
 import { synthesizeSegment } from './voices.js';
+import { getChirpUsage } from './chirp.js';
 import { auditScript } from './audit.js';
 import { buildDigestMaterial, generateDigestScript } from './digest.js';
 import { generateRSSFeed } from './rss.js';
@@ -187,6 +188,16 @@ async function run() {
     if (i < segments.length - 1) fs.appendFileSync(pcmFile, SILENCE);
   }
   if (!fs.existsSync(pcmFile)) throw new Error('No audio produced');
+  // Chirp bills (and free-tier-counts) synthesized characters including
+  // SSML markup; log the run total so monthly usage vs the 1M free tier
+  // can be tracked from the Actions logs.
+  const chirpUsage = getChirpUsage();
+  if (chirpUsage.calls > 0 || chirpUsage.fallbacks > 0) {
+    console.log(
+      `Chirp TTS usage this run: ${chirpUsage.characters} characters (incl. SSML markup) ` +
+        `across ${chirpUsage.calls} call(s); ${chirpUsage.fallbacks} segment(s) fell back to Gemini.`
+    );
+  }
 
   console.log('Step 5: Mastering (loudness-normalized)...');
   execSync(

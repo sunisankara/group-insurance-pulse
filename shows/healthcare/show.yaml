@@ -15,8 +15,13 @@ hosts:
   # never sound like the same two people.
   - name: Alex
     voice: Charon
+    chirpVoice: en-US-Chirp3-HD-Puck
   - name: Sam
     voice: Aoede
+    chirpVoice: en-US-Chirp3-HD-Zephyr
+# TTS provider: unset = Gemini, unless the TTS_PROVIDER env var is set
+# (TTS_PROVIDER=chirp makes Chirp 3 HD the default). Set ttsProvider here
+# to pin this show to one provider regardless of the environment.
 ttsModel: gemini-2.5-flash-preview-tts
 textModel: gemini-2.5-flash
 targetMinutes: 15
