@@ -25,6 +25,7 @@ import { auditScript } from './audit.js';
 import { buildDigestMaterial, generateDigestScript } from './digest.js';
 import { generateRSSFeed } from './rss.js';
 import { phoenixDate, publishedToday } from './dates.js';
+import { pickEncoreSource } from './encore.js';
 import { AuditResult, EpisodeRecord } from './types.js';
 
 const args = process.argv.slice(2);
@@ -140,6 +141,53 @@ async function tryDigestScript(
   return null;
 }
 
+/**
+ * Encore publish: copy an older episode's MP3 into today's feed slot.
+ * Zero API calls — this is the fallback that still works when the entire
+ * text pipeline is down (billing outage, provider outage). Returns false
+ * when the source audio file is missing from the checkout.
+ */
+function publishEncore(
+  cfg: ReturnType<typeof loadShowConfig>,
+  rssDir: string,
+  dbPath: string,
+  episodes: EpisodeRecord[],
+  source: EpisodeRecord
+): boolean {
+  const srcPath = path.join(rssDir, source.audioUrl);
+  if (!fs.existsSync(srcPath)) {
+    console.log(`Encore source audio missing from checkout: ${source.audioUrl}`);
+    return false;
+  }
+  const id = Date.now().toString();
+  const filename = `${cfg.id}-${id}.mp3`;
+  fs.copyFileSync(srcPath, path.join(rssDir, filename));
+  episodes.unshift({
+    id,
+    date: new Date().toISOString(),
+    title: `${cfg.title} Encore — ${source.title}`,
+    script: source.script,
+    audioUrl: filename,
+    topics: [],
+    mainStories: [],
+    status: 'published-encore',
+    auditIssues: ['encore fallback: fresh and digest generation were both unavailable'],
+    audioBytes: source.audioBytes,
+    durationSec: source.durationSec,
+    digest: true, // encores stay out of the dedup corpus and continuity, like digests
+    encoreOf: source.id,
+  });
+  fs.writeFileSync(dbPath, JSON.stringify(episodes, null, 2));
+  const repoPath = process.env.GITHUB_REPOSITORY || 'owner/repo';
+  const [owner, repoName] = repoPath.split('/');
+  const baseUrl = `https://${owner}.github.io/${repoName}`;
+  const feedBase = cfg.rssDir === 'rss' ? `${baseUrl}/rss` : `${baseUrl}/${cfg.rssDir}`;
+  fs.writeFileSync(path.join(rssDir, 'feed.xml'), generateRSSFeed(episodes, cfg, feedBase));
+  console.log(`Publishing ENCORE episode: "${source.title}" (first aired ${source.date}).`);
+  console.log('--- BROADCAST COMPLETE (encore) ---');
+  return true;
+}
+
 async function run() {
   const cfg = loadShowConfig(showId);
   console.log(`--- ${cfg.title.toUpperCase()}: PULSE ENGINE ---`);
@@ -205,7 +253,21 @@ async function run() {
 
   const finalOutcome = outcome ?? (await tryDigestScript(cfg, episodes, recentScripts));
   if (!finalOutcome) {
-    throw new Error('Script generation failed (fresh x3, digest x2). Skipping today\'s episode rather than publishing a broken one.');
+    // Terminal guarantee: if the whole text pipeline is down, an honestly
+    // labeled encore of an older episode still ships. A skipped day is
+    // worse than a rerun; a broken stub stays unacceptable.
+    // Old archive entries may point at MP3s the prune step already removed
+    // from the repo, so walk candidates until one actually publishes.
+    const tried = new Set<string>();
+    for (let i = 0; i < episodes.length; i++) {
+      const source = pickEncoreSource(episodes.filter((e) => !tried.has(e.id)));
+      if (!source) break;
+      tried.add(source.id);
+      if (publishEncore(cfg, rssDir, dbPath, episodes, source)) {
+        return;
+      }
+    }
+    throw new Error('Script generation failed (fresh x3, digest x2) and no encore source is available. Skipping today\'s episode rather than publishing a broken one.');
   }
   if (finalOutcome.digest) {
     console.log('Publishing DIGEST episode (fresh script could not pass the audit today).');

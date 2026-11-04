@@ -57,6 +57,8 @@ export interface EpisodeRecord {
   durationSec?: number;
   /** True for digest/look-back fallback episodes — excluded from the story dedup corpus. */
   digest?: boolean;
+  /** For encore fallback episodes: the id of the original episode republished. */
+  encoreOf?: string;
 }
 
 export interface AuditResult {

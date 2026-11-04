@@ -4,6 +4,7 @@ import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
 import { phoenixDate, publishedToday } from './engine/dates.js';
+import { pickEncoreSource } from './engine/encore.js';
 import {
   CHIRP_TTS_ENDPOINT,
   CHIRP_SSML_TAGS,
@@ -123,6 +124,22 @@ ok('guard: early-UTC episode is still yesterday in Phoenix', !publishedToday([ep
 ok('guard: yesterday does not block', !publishedToday([epRec('2026-11-03T17:50:47Z')], nowNov4));
 ok('guard: empty archive does not block', !publishedToday([], nowNov4));
 ok('phoenix date formats', phoenixDate(new Date('2026-11-04T06:30:00Z')) === '2026-11-03');
+
+// 6e. Encore picker: oldest real episode at least 10 days old, never a
+// digest, never an episode that was already encored, never a legacy
+// http-hosted file.
+const arc = (id: string, iso: string, extra: object = {}) => ({ ...epRec(iso), id, audioUrl: `${id}.mp3`, ...extra });
+const archive = [
+  arc('new1', '2026-11-03T18:00:00Z'),
+  arc('mid1', '2026-10-28T18:00:00Z'),
+  arc('old1', '2026-10-20T18:00:00Z'),
+  arc('old2', '2026-10-15T18:00:00Z', { digest: true }),
+  arc('old3', '2026-10-12T18:00:00Z'),
+];
+ok('encore picks oldest eligible episode', pickEncoreSource(archive, nowNov4)?.id === 'old3');
+ok('encore never re-encores a used source', pickEncoreSource([...archive, arc('enc1', '2026-11-04T18:00:00Z', { encoreOf: 'old3', digest: true })], nowNov4)?.id === 'old1');
+ok('encore refuses a too-young archive', pickEncoreSource(archive.slice(0, 2), nowNov4) === null);
+ok('encore refuses http-hosted audio', pickEncoreSource([arc('h1', '2026-10-01T18:00:00Z', { audioUrl: 'https://example.com/x.mp3' })], nowNov4) === null);
 
 // 6. RSS feed builds with per-show metadata
 const feed = generateRSSFeed([{ id: '1', date: new Date().toISOString(), title: 'Test & Title', script: 'Aria: hello', audioUrl: 'rss/ep.mp3', topics: [], mainStories: ['a & b'], status: 'published', auditIssues: [] }], gi, 'https://sunisankara.github.io/group-insurance-pulse/rss');
