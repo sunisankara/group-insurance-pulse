@@ -3,6 +3,7 @@ import { parseRanked, newsWindow, dedupeStories, extractLensNames } from './engi
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
+import { phoenixDate, publishedToday } from './engine/dates.js';
 import {
   CHIRP_TTS_ENDPOINT,
   CHIRP_SSML_TAGS,
@@ -110,6 +111,18 @@ ok('lens names extracted', giLenses.includes('The CFO') && giLenses.includes('Th
 // LENS parses even when the model writes it lowercase
 const lower = parseRanked(`[RANK 1]\nHEADLINE: X\nlens: The Regulator\nFACTS: y\nCONTEXT: z`);
 ok('lens label case-insensitive', lower.length === 1 && lower[0].lens === 'The Regulator');
+
+// 6d. Idempotency guard: an episode already published today (Phoenix)
+// blocks a second run; yesterday's episode does not. Phoenix is UTC-7
+// year-round, so 2026-11-04T18:36Z is 11:36 AM Phoenix the same day,
+// while 2026-11-04T06:30Z is still Nov 3 in Phoenix.
+const epRec = (iso: string) => ({ id: 'x', date: iso, title: 't', script: '', audioUrl: 'x.mp3', topics: [], mainStories: [], status: 'published', auditIssues: [] });
+const nowNov4 = new Date('2026-11-04T19:00:00Z');
+ok('guard: same Phoenix day blocks rerun', publishedToday([epRec('2026-11-04T18:36:38Z')], nowNov4));
+ok('guard: early-UTC episode is still yesterday in Phoenix', !publishedToday([epRec('2026-11-04T06:30:00Z')], nowNov4));
+ok('guard: yesterday does not block', !publishedToday([epRec('2026-11-03T17:50:47Z')], nowNov4));
+ok('guard: empty archive does not block', !publishedToday([], nowNov4));
+ok('phoenix date formats', phoenixDate(new Date('2026-11-04T06:30:00Z')) === '2026-11-03');
 
 // 6. RSS feed builds with per-show metadata
 const feed = generateRSSFeed([{ id: '1', date: new Date().toISOString(), title: 'Test & Title', script: 'Aria: hello', audioUrl: 'rss/ep.mp3', topics: [], mainStories: ['a & b'], status: 'published', auditIssues: [] }], gi, 'https://sunisankara.github.io/group-insurance-pulse/rss');

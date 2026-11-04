@@ -24,6 +24,7 @@ import { getChirpUsage } from './chirp.js';
 import { auditScript } from './audit.js';
 import { buildDigestMaterial, generateDigestScript } from './digest.js';
 import { generateRSSFeed } from './rss.js';
+import { phoenixDate, publishedToday } from './dates.js';
 import { AuditResult, EpisodeRecord } from './types.js';
 
 const args = process.argv.slice(2);
@@ -155,6 +156,11 @@ async function run() {
   // History first: audit cross-checks, host continuity, and digest material
   // all read the archive before today's episode exists.
   const episodes: EpisodeRecord[] = fs.existsSync(dbPath) ? JSON.parse(fs.readFileSync(dbPath, 'utf8')) : [];
+  if (!DRY_RUN && publishedToday(episodes)) {
+    console.log(`An episode for today (${phoenixDate(new Date())}, Phoenix) is already in the feed — nothing to do.`);
+    console.log('--- BROADCAST COMPLETE (already published today) ---');
+    return;
+  }
   const recentScripts = episodes.slice(0, 3).map((e) => e.script || '');
   const prev = episodes[0];
   const continuity: ContinuityContext = {
