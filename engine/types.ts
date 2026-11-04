@@ -60,8 +60,14 @@ export interface EpisodeRecord {
 }
 
 export interface AuditResult {
+  /** Fully clean: no hard issues and no soft warnings. */
   passed: boolean;
+  /** No hard (publishing-blocking) issues; soft warnings may remain. */
+  hardPassed: boolean;
+  /** Hard issues: defects that must never reach the feed. */
   issues: string[];
+  /** Soft warnings: style/quality problems that trigger regeneration but never veto a day on their own. */
+  warnings: string[];
   feedbackPrompt?: string;
   estimatedMinutes?: number;
 }

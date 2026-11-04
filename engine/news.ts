@@ -7,11 +7,29 @@ function ai() {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 }
 
+/**
+ * Errors that retrying can never fix: billing/quota exhaustion (402 /
+ * RESOURCE_EXHAUSTED — the 2026-11-03/04 outage, where the engine burned
+ * its retries against an empty AI Studio prepay balance), bad keys and
+ * permission failures. Fail fast and loud instead.
+ */
+export function isNonRetryable(error: any): boolean {
+  const msg = String(error?.message || error || '');
+  return (
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('"code":402') ||
+    msg.includes('prepayment credits are depleted') ||
+    msg.includes('PERMISSION_DENIED') ||
+    msg.includes('API key not valid') ||
+    msg.includes('API_KEY_INVALID')
+  );
+}
+
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {
     return await fn();
   } catch (error) {
-    if (retries <= 0) throw error;
+    if (retries <= 0 || isNonRetryable(error)) throw error;
     await new Promise((r) => setTimeout(r, delay));
     return withRetry(fn, retries - 1, delay * 2);
   }

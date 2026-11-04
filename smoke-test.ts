@@ -64,7 +64,7 @@ const dup = Array.from({length: 30}, () => `Aria: Fresh analysis point here with
   + '\n[TRANSITION]\n' + dupStory
   + '\n[TRANSITION]\n' + dupStory;
 const aDup = auditScript(gi, dup);
-ok('audit catches duplicated story', !aDup.passed && aDup.issues.some(i => i.includes('duplicated story')));
+ok('audit catches duplicated story', !aDup.passed && aDup.warnings.some(i => i.includes('duplicated story')));
 
 // 5b. Oct 2026 regressions: truncated script (mid-sentence, no sign-off) must
 // fail; AI-tell phrases must fail; Dorian's room anecdote repeated from a
@@ -73,6 +73,8 @@ const truncated = good.slice(0, good.length - 400) + ' and that is why brokers a
 ok('audit fails truncated script', !auditScript(gi, truncated).passed);
 const withTell = good.replace('deserves scrutiny', 'deserves scrutiny — moreover, it is a landscape worth mapping');
 ok('audit fails AI-tell phrasing', !auditScript(gi, withTell).passed);
+ok('AI-tell is a soft warning, not a veto', auditScript(gi, withTell).hardPassed);
+ok('truncated script is a hard failure', !auditScript(gi, truncated).hardPassed);
 const roomToday = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
 const roomRecent = ['Aria: Earlier.\nDorian: I was in a room last week where this exact fight played out.'];
 ok('audit fails repeated room anecdote', !auditScript(gi, roomToday, roomRecent).passed);
@@ -84,7 +86,8 @@ ok('audit allows room anecdote when not recent', auditScript(gi, roomFresh, []).
 // fresh script and pass it in digest mode. And a sign-off followed by one
 // short closing segment must still count as signed off.
 const aRecycledFresh = auditScript(gi, good, [good]);
-ok('fresh audit fails wholesale recycling', !aRecycledFresh.passed && aRecycledFresh.issues.some(i => i.includes('recycled')));
+ok('fresh audit fails wholesale recycling', !aRecycledFresh.passed && aRecycledFresh.warnings.some(i => i.includes('recycled')));
+ok('recycling is a soft warning, not a veto', aRecycledFresh.hardPassed);
 ok('digest audit exempt from recycling check', auditScript(gi, good, [good], { digest: true }).passed);
 const trailedOff = good + '\n[TRANSITION]\nAria: Quick final note — the enrollment window opens Monday.\nDorian: Brokers, set your reminders tonight.';
 ok('sign-off counts within last 400 chars', auditScript(gi, trailedOff).passed);
@@ -116,7 +119,8 @@ ok('rss escapes + title', feed.includes('Test &amp; Title') && feed.includes('<t
 ok('gi chirp voices', gi.hosts[0].chirpVoice === 'en-US-Chirp3-HD-Aoede' && gi.hosts[1].chirpVoice === 'en-US-Chirp3-HD-Fenrir');
 ok('hc chirp voices', hc.hosts[0].chirpVoice === 'en-US-Chirp3-HD-Puck' && hc.hosts[1].chirpVoice === 'en-US-Chirp3-HD-Zephyr');
 delete process.env.TTS_PROVIDER;
-ok('provider defaults to gemini', resolveTtsProvider(gi) === 'gemini');
+ok('provider defaults to gemini', resolveTtsProvider({ ...gi, ttsProvider: undefined }) === 'gemini');
+ok('show pin beats default', resolveTtsProvider(gi) === 'chirp');
 process.env.TTS_PROVIDER = 'chirp';
 ok('TTS_PROVIDER env enables chirp', resolveTtsProvider(gi) === 'chirp');
 ok('show config beats env default', resolveTtsProvider({ ...gi, ttsProvider: 'gemini' }) === 'gemini');

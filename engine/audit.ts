@@ -10,6 +10,14 @@ import { splitSegments } from './script.js';
  * script that fails. The completeness checks (6) exist because truncated
  * scripts — ending mid-sentence with no sign-off — repeatedly reached the
  * feed before anyone listened to them.
+ *
+ * Tiered since Nov 2026: checks split into HARD issues (defects that must
+ * never air: truncation, missing sign-off, broken speaker labels, wildly
+ * wrong length) and SOFT warnings (style: AI-tells, recycled phrasing,
+ * repeated host devices, duplicated-story suspicion). Soft warnings feed
+ * the regeneration loop, but a script with only soft warnings is still
+ * publishable after the attempts run out — the Oct 26-30 outage happened
+ * because soft checks held veto power over the whole day.
  */
 
 /** Phrases real hosts don't say on air; their presence marks generated filler. */
@@ -71,6 +79,7 @@ export function auditScript(
   opts: { digest?: boolean } = {}
 ): AuditResult {
   const issues: string[] = [];
+  const warnings: string[] = [];
   const segments = splitSegments(script);
   const hostNames = cfg.hosts.map((h) => h.name);
 
@@ -114,7 +123,7 @@ export function auditScript(
   });
   const repeats = [...phraseSegments.values()].filter((s) => s.size > 1).length;
   if (repeats > 2) {
-    issues.push(`Detected ${repeats} phrases repeated across different segments — possible duplicated story`);
+    warnings.push(`Detected ${repeats} phrases repeated across different segments — possible duplicated story`);
   }
 
   // 5. Headlines: later segments should open with a headline-ish line, not a
@@ -125,7 +134,7 @@ export function auditScript(
     if (i === 0) return;
     const first = seg.split('\n').find((l) => l.trim().length > 20);
     if (first && first.length > 400) {
-      issues.push(`Segment ${i + 1} jumps into detail without a headline opener`);
+      warnings.push(`Segment ${i + 1} jumps into detail without a headline opener`);
     }
   });
 
@@ -164,7 +173,7 @@ export function auditScript(
   // 7. AI-tell phrases
   const tells = AI_TELLS.filter(([re]) => re.test(script)).map(([, label]) => label);
   if (tells.length > 0) {
-    issues.push(`AI-tell phrase(s) present: ${tells.join(', ')} — rewrite in plain spoken language`);
+    warnings.push(`AI-tell phrase(s) present: ${tells.join(', ')} — rewrite in plain spoken language`);
   }
 
   // 8. Cross-episode repetition: signature host devices and phrasing carried
@@ -179,7 +188,7 @@ export function auditScript(
   if (!opts.digest && recentScripts.length > 0) {
     for (const [re, label] of SIGNATURE_FRAMES) {
       if (re.test(script) && recentScripts.some((s) => re.test(s))) {
-        issues.push(`Host device ${label} also appeared in a recent episode — vary the grounding device today`);
+        warnings.push(`Host device ${label} also appeared in a recent episode — vary the grounding device today`);
       }
     }
     const yesterday = ngrams(recentScripts[0], 8);
@@ -189,14 +198,22 @@ export function auditScript(
     // with the episode that first covered it (Oct 26-30 logs). Wholesale
     // copying runs 100+, so 20 still catches lazy rewrites.
     if (shared > 20) {
-      issues.push(`Detected ${shared} phrases recycled from the previous episode — fresh wording required`);
+      warnings.push(`Detected ${shared} phrases recycled from the previous episode — fresh wording required`);
     }
   }
 
+  const all = [...issues, ...warnings];
   const feedbackPrompt =
-    issues.length > 0
-      ? `AUDIT FEEDBACK — fix every issue below in the regenerated script:\n- ${issues.join('\n- ')}`
+    all.length > 0
+      ? `AUDIT FEEDBACK — fix every issue below in the regenerated script:\n- ${all.join('\n- ')}`
       : undefined;
 
-  return { passed: issues.length === 0, issues, feedbackPrompt, estimatedMinutes: estMinutes };
+  return {
+    passed: issues.length === 0 && warnings.length === 0,
+    hardPassed: issues.length === 0,
+    issues,
+    warnings,
+    feedbackPrompt,
+    estimatedMinutes: estMinutes,
+  };
 }

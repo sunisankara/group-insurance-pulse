@@ -54,6 +54,7 @@ async function tryFreshScript(
 ): Promise<ScriptOutcome | null> {
   let feedback: string | undefined;
   let lastIssues: string[] = [];
+  let softOutcome: ScriptOutcome | null = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const script = await generateScript(cfg, stories, feedback, continuity);
@@ -62,14 +63,32 @@ async function tryFreshScript(
         console.log(`Script audit passed on attempt ${attempt} (~${audit.estimatedMinutes?.toFixed(1)} min estimated).`);
         return { script, audit, digest: false };
       }
-      lastIssues = audit.issues;
+      if (audit.hardPassed) {
+        // Publishable, just not pretty: keep it as the fallback outcome and
+        // let the remaining attempts try to beat it on style.
+        softOutcome = { script, audit, digest: false };
+        console.log(`Script audit soft-failed (attempt ${attempt}/3) — publishable, style warnings:`, audit.warnings.join('; '));
+      } else {
+        console.log(`Script audit failed (attempt ${attempt}/3):`, audit.issues.join('; '));
+      }
+      lastIssues = [...audit.issues, ...audit.warnings];
       feedback = audit.feedbackPrompt;
-      console.log(`Script audit failed (attempt ${attempt}/3):`, audit.issues.join('; '));
     } catch (err: any) {
       lastIssues = [`generation error: ${err?.message || err}`];
       feedback = `The previous attempt failed during generation (${err?.message || err}). Write a complete script that ends with a proper sign-off.`;
       console.log(`Script generation failed (attempt ${attempt}/3):`, err?.message || err);
     }
+  }
+  if (softOutcome) {
+    console.log(
+      'Publishing the best fresh script despite style warnings (soft checks never veto a day):',
+      softOutcome.audit.warnings.join('; ')
+    );
+    softOutcome.audit = {
+      ...softOutcome.audit,
+      issues: softOutcome.audit.warnings.map((w) => `waived warning: ${w}`),
+    };
+    return softOutcome;
   }
   console.log('Fresh script failed all 3 attempts. Last issues:', lastIssues.join('; '));
   return null;
@@ -88,6 +107,7 @@ async function tryDigestScript(
   }
   console.log(`Trying digest fallback from ${material.episodes.length} recent episodes...`);
   let feedback: string | undefined;
+  let softOutcome: ScriptOutcome | null = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const script = await generateDigestScript(cfg, material, feedback);
@@ -96,12 +116,25 @@ async function tryDigestScript(
         console.log(`Digest script audit passed on attempt ${attempt} (~${audit.estimatedMinutes?.toFixed(1)} min estimated).`);
         return { script, audit, digest: true };
       }
+      if (audit.hardPassed) {
+        softOutcome = { script, audit, digest: true };
+        console.log(`Digest audit soft-failed (attempt ${attempt}/2) — publishable, style warnings:`, audit.warnings.join('; '));
+      } else {
+        console.log(`Digest audit failed (attempt ${attempt}/2):`, audit.issues.join('; '));
+      }
       feedback = audit.feedbackPrompt;
-      console.log(`Digest audit failed (attempt ${attempt}/2):`, audit.issues.join('; '));
     } catch (err: any) {
       feedback = `The previous attempt failed during generation (${err?.message || err}). Write a complete script that ends with a proper sign-off.`;
       console.log(`Digest generation failed (attempt ${attempt}/2):`, err?.message || err);
     }
+  }
+  if (softOutcome) {
+    console.log('Publishing digest despite style warnings (soft checks never veto a day):', softOutcome.audit.warnings.join('; '));
+    softOutcome.audit = {
+      ...softOutcome.audit,
+      issues: softOutcome.audit.warnings.map((w) => `waived warning: ${w}`),
+    };
+    return softOutcome;
   }
   return null;
 }
@@ -264,5 +297,16 @@ async function run() {
 
 run().catch((err) => {
   console.error('--- ENGINE ERROR ---', err?.message || err);
+  const msg = String(err?.message || err || '');
+  if (
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('prepayment credits are depleted') ||
+    msg.includes('"code":402')
+  ) {
+    console.error(
+      'ACTION REQUIRED: the Gemini API project is out of AI Studio prepayment credits. ' +
+        'Top up at https://ai.studio/projects (enable auto-recharge) — every show will keep failing at Step 1 until this is done.'
+    );
+  }
   process.exit(1);
 });
