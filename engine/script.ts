@@ -47,9 +47,10 @@ function pickByDay<T>(arr: T[]): T {
  * read aloud do not sound like a podcast.
  */
 export function conversationRules(cfg: ShowConfig): string {
-  const [h1] = cfg.hosts;
+  const [h1, h2] = cfg.hosts;
   return `CONVERSATION RULES — this must sound like two people talking, not an essay read aloud:
 - Every line starts with the speaker's name and a colon, e.g. "${h1.name}: ..." — never deviate, never drop the label. No markdown anywhere (no **, no ##, no bullet lists). The only bracketed tag allowed is [TRANSITION] on its own line between story segments.
+- BOTH HOSTS SPEAK IN EVERY SEGMENT — including Segment 1 and the cold open. ${h2.name} must react within the first few lines of the episode; never open with a solo monologue. Even when the cold open is phrased as one host's thought or provocation, the other host jumps in immediately — a cold open is a spark for a two-person exchange, never one host talking alone.
 - Headlines are SPOKEN as dialogue lines ("${h1.name}: Headline — ..."), never bare "HEADLINE:" lines.
 - VARY TURN LENGTH HARD. Mix long analytical turns with very short ones — one-line reactions ("Wait — seriously?", "Hmm.", "That can't hold."), quick agreements, genuine questions. At least a quarter of the turns should be under 15 words. Real conversation is lumpy; if every turn is a polished paragraph, it sounds generated.
 - Interruptions happen. Occasionally a turn ends mid-thought with "—" and the other host jumps in; the interrupted point may never get finished. Use sparingly — two or three per episode.
