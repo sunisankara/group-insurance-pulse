@@ -137,6 +137,15 @@ const dateString = (now: Date) =>
 export async function recallCandidates(cfg: ShowConfig): Promise<string> {
   const now = new Date();
   const { day1, day2 } = newsWindow(now);
+  const priority = extractPriorityWatch(cfg.newsDoc);
+  const { start: weekStart } = priorityWindow(now);
+  const priorityBlock = priority.length
+    ? `
+PRIORITY WATCH — standing editorial priority; this OVERRIDES the 48-hour rule for these companies only: ${priority.join('; ')}.
+- Actively search for developments from these companies, including their own press releases — do not wait for them to surface in general coverage.
+- If no development from a priority-watch company is dated ${day1} or ${day2}, widen the window for that company only: include its most recent genuine development dated between ${weekStart} and ${day2} that is NOT in RECENTLY COVERED TOPICS.
+- Whenever such a development exists, the candidate list MUST include at least one story per priority-watch company. A candidate list with none, when one exists, is a failure.`
+    : '';
   const prompt = `Act as a Senior Industry News Researcher.
 TODAY'S DATE IS: ${dateString(now)}.
 ${recentTopics(cfg.rssDir)}
@@ -155,7 +164,7 @@ For each candidate provide:
 RULES:
 - Every story MUST be dated ${day1} or ${day2}. IGNORE anything older.
 - Every story MUST include hard numbers (dollars, percentages, or dates) and specific company names.
-- Do not repeat items from RECENTLY COVERED TOPICS unless there is a genuinely new development in the last 24 hours.`;
+- Do not repeat items from RECENTLY COVERED TOPICS unless there is a genuinely new development in the last 24 hours.${priorityBlock}`;
 
   const response = await withRetry(() =>
     ai().models.generateContent({
@@ -176,9 +185,43 @@ export function extractLensNames(lensesDoc: string): string[] {
   return [...lensesDoc.matchAll(/-\s*\*\*(.+?)\*\*/g)].map((m) => m[1].trim());
 }
 
+/**
+ * Priority-watch entities from a news.md doc: the bold names inside its
+ * "## Priority watch" section. A priority-watch company is a standing
+ * editorial priority (for Group Insurance: New York Life Group Benefit
+ * Solutions, which Shankar wants covered at least twice a week). Recall
+ * searches for these companies actively and may look back 7 days for
+ * them; the ranker must include a genuine priority-watch story when one
+ * is among the candidates. Exported for tests.
+ */
+export function extractPriorityWatch(newsDoc: string): string[] {
+  const start = newsDoc.search(/^##\s*Priority watch.*$/m);
+  if (start < 0) return [];
+  const rest = newsDoc.slice(start);
+  const next = rest.slice(3).search(/^##\s/m);
+  const section = next < 0 ? rest : rest.slice(0, next + 3);
+  return [...section.matchAll(/\*\*(.+?)\*\*/g)].map((m) => m[1].trim()).filter(Boolean);
+}
+
+/** 7-day lookback window (today-6 .. today) as M/D strings — the window
+ *  priority-watch companies may be recalled from when the last 48 hours
+ *  hold nothing of theirs. */
+export function priorityWindow(now: Date = new Date()): { start: string; end: string } {
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+  const start = new Date(now);
+  start.setDate(now.getDate() - 6);
+  return { start: fmt(start), end: fmt(now) };
+}
+
 export async function rankStories(cfg: ShowConfig, candidates: string, keep = 5): Promise<RankedStory[]> {
   const lensNames = extractLensNames(cfg.lensesDoc);
   const lensList = lensNames.length ? lensNames.join(', ') : 'general';
+  const priority = extractPriorityWatch(cfg.newsDoc);
+  const priorityBlock = priority.length
+    ? `
+STANDING EDITORIAL PRIORITY: ${priority.join('; ')} are priority-watch companies. If a candidate covers one of them and is a genuine business development, it MUST be among the selected stories — rank it on merit within the selection, but never drop it in favour of a non-priority story.
+`
+    : '';
   const prompt = `You are the executive producer of "${cfg.title}", a daily briefing for senior industry leaders.
 
 CANDIDATE STORIES (from the last 48h):
@@ -195,6 +238,7 @@ TASK: Rank the candidates and select the top ${keep} stories that matter MOST to
 
 Drop incremental press-release fluff and vendor announcements with no hard numbers.
 IMPORTANT: return EXACTLY ${keep} ranked stories, no fewer. If fewer than ${keep} are strong, include the next-best candidates anyway (weakest last) — a short list is a failure.
+${priorityBlock}
 
 OUTPUT FORMAT — for each selected story, in rank order, with EXACTLY these labeled lines:
 [RANK n]

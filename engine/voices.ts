@@ -3,6 +3,7 @@ import { ShowConfig } from './types.js';
 import { splitOversizedSegment } from './script.js';
 import { resolveTtsProvider } from './config.js';
 import { synthesizeSegmentChirp } from './chirp.js';
+import { applyPronunciationRespells } from './pronunciations.js';
 
 function ai() {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -57,8 +58,13 @@ export async function synthesizeSegmentGemini(cfg: ShowConfig, segmentText: stri
   const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*\*/g, '').trim();
   if (!cleanText) return [];
 
+  // Same pronunciation dictionary as the Chirp path (plain-text respells
+  // on the spoken text only), so a segment that falls back to Gemini
+  // still says "You-num", not "Unum".
+  const spokenText = applyPronunciationRespells(cleanText);
+
   const hostNames = cfg.hosts.map((h) => h.name);
-  const pieces = splitOversizedSegment(cleanText, hostNames);
+  const pieces = splitOversizedSegment(spokenText, hostNames);
 
   const results: string[] = [];
   for (const piece of pieces) {

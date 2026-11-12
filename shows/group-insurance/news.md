@@ -7,7 +7,19 @@ Audience: senior leaders (C-suite, EVPs, SVPs) at major US group insurance carri
 MetLife, Prudential Financial, Lincoln Financial, Unum, The Hartford, Sun Life,
 Guardian Life, Principal Financial, Mutual of Omaha, Voya Financial, Reliance
 Matrix, OneAmerica, Securian Financial, Standard Insurance Company (The Standard),
-Aflac, USAble Life, Dearborn Group.
+Aflac, USAble Life, Dearborn Group, New York Life Group Benefit Solutions.
+
+## Priority watch
+
+- **New York Life Group Benefit Solutions (NYL GBS)** — cover at least twice
+  a week. New York Life is a MUTUAL insurer: it has no stock, no public
+  earnings, and no SEC filings, so it will never surface through
+  earnings-driven coverage — do not treat the absence of earnings signals
+  as an absence of news. For NYL GBS, product launches, partnerships,
+  distribution deals, leadership moves, platform and technology rollouts,
+  and published sales/results figures are first-class news. If the last
+  48 hours hold nothing, look back over the last 7 days for an uncovered
+  development (the recall prompt enforces this window).
 
 ## Topics
 

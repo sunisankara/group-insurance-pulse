@@ -58,6 +58,7 @@ export function conversationRules(cfg: ShowConfig): string {
 - Each host commits to at least one falsifiable take per episode ("this closes by Q2", "that growth number is borrowing from next year"). No both-sides mush, no hedging every claim into fog.
 - NEVER use these phrases: "delve", "moreover", "furthermore", "it's important to note", "in conclusion", "ever-evolving", "in today's fast-paced", "navigate the complexities". Do not frame with "on one hand ... on the other hand".
 - Numbers get said the way people say them, with units, and hosts react to them before analysing them.
+- Acronyms are written exactly the way a person says them on a call (HMO, LTD, 401(k)) — NEVER spelled out with periods or spaces between the letters ("H. M. O."), which makes the voices slow down and sound artificial. If an acronym would be unclear spoken, use the plain spoken phrase instead ("short-term disability").
 - Close with a 2-3 line sign-off that ties the day together, spoken by both hosts. The sign-off is the literal end of the script — nothing after it, and the final line ends with a period. The closing MUST include the words "thanks for listening" (work them in naturally, e.g. "That's the pulse for today — thanks for listening."). Vary the rest of the sign-off wording; never reuse yesterday's.`;
 }
 

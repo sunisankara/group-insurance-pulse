@@ -24,6 +24,7 @@
 import { Buffer } from 'buffer';
 import { HostConfig, ShowConfig } from './types.js';
 import { splitOversizedSegment } from './script.js';
+import { applyPronunciationRespells } from './pronunciations.js';
 
 export const CHIRP_TTS_ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
@@ -71,35 +72,18 @@ function escapeRe(s: string): string {
 }
 
 /**
- * Pronunciation map for insurance jargon. Two tools, used sparingly:
- *  - <sub alias> where the industry says a word Google would mangle
- *    (EBITDA is "ee-bit-dah", never spelled out; Aflac is "aff-lack").
- *  - <say-as interpret-as="characters"> for acronyms people spell out
- *    (HMO, PPO) — without it, engines guess and sometimes say them as words.
- * Applied to already-XML-escaped text; none of the terms contain XML chars.
+ * Pronunciations come from the shared dictionary in pronunciations.ts,
+ * applied as PLAIN-TEXT respells ("Unum" -> "You-num") — no SSML markup.
+ * The old approach wrapped spelled acronyms (HMO, PPO, ...) in
+ * <say-as interpret-as="characters">, which made Chirp stretch them out
+ * letter by letter with pauses: the artificial slow-down flagged on
+ * 2026-11-12. Chirp 3 HD renders standard industry acronyms natively at
+ * a natural pace, so nothing is wrapped anymore; terms the engine still
+ * gets wrong are fixed by adding a line to the dictionary instead.
+ * Kept under its historical name for the smoke tests and buildTurnSsml.
  */
-const SUBSTITUTIONS: { pattern: RegExp; replacement: string }[] = [
-  { pattern: /\b401\(k\)/g, replacement: '<sub alias="four oh one k">401(k)</sub>' },
-  { pattern: /\b403\(b\)/g, replacement: '<sub alias="four oh three b">403(b)</sub>' },
-  { pattern: /\bEBITDA\b/g, replacement: '<sub alias="ee-bit-dah">EBITDA</sub>' },
-  { pattern: /\bAflac\b/gi, replacement: '<sub alias="aff-lack">Aflac</sub>' },
-  { pattern: /\bHIPAA\b/g, replacement: '<sub alias="hip-uh">HIPAA</sub>' },
-];
-
-const SPELL_OUT_TERMS = ['HMO', 'PPO', 'EPO', 'HDHP', 'HSA', 'FSA', 'ACA', 'CMS', 'LTC', 'PHI'];
-
-export function applyPronunciations(escapedText: string): string {
-  let out = escapedText;
-  for (const { pattern, replacement } of SUBSTITUTIONS) {
-    out = out.replace(pattern, replacement);
-  }
-  for (const term of SPELL_OUT_TERMS) {
-    out = out.replace(
-      new RegExp(`\\b${term}\\b`, 'g'),
-      `<say-as interpret-as="characters">${term}</say-as>`
-    );
-  }
-  return out;
+export function applyPronunciations(text: string): string {
+  return applyPronunciationRespells(text);
 }
 
 export interface ProsodyProfile {
@@ -129,7 +113,7 @@ export function buildTurnSsml(rawText: string, prosody: ProsodyProfile): string 
     .map((p) => p.trim())
     .filter(Boolean);
   const rendered = paragraphs.map((p) =>
-    applyPronunciations(escapeXml(p.replace(/\s*\n\s*/g, ' ')))
+    escapeXml(applyPronunciations(p.replace(/\s*\n\s*/g, ' ')))
   );
   const body = rendered.join('<break time="650ms"/>');
   return `<speak><prosody rate="${prosody.rate}" pitch="${prosody.pitch}">${body}</prosody></speak>`;

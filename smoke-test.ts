@@ -1,5 +1,5 @@
 import { loadShowConfig, resolveTtsProvider } from './engine/config.js';
-import { parseRanked, newsWindow, dedupeStories, extractLensNames } from './engine/news.js';
+import { parseRanked, newsWindow, dedupeStories, extractLensNames, extractPriorityWatch, priorityWindow } from './engine/news.js';
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
@@ -113,6 +113,14 @@ ok('lens names extracted', giLenses.includes('The CFO') && giLenses.includes('Th
 const lower = parseRanked(`[RANK 1]\nHEADLINE: X\nlens: The Regulator\nFACTS: y\nCONTEXT: z`);
 ok('lens label case-insensitive', lower.length === 1 && lower[0].lens === 'The Regulator');
 
+// 6c2. Priority watch: NYL GBS is parsed from the GI news doc, absent for HC,
+// and the 7-day lookback window spans month boundaries correctly.
+const giPriority = extractPriorityWatch(gi.newsDoc);
+ok('priority watch finds NYL GBS', giPriority.some((e) => e.includes('New York Life Group Benefit Solutions')));
+ok('priority watch empty for healthcare', extractPriorityWatch(hc.newsDoc).length === 0);
+const pw = priorityWindow(new Date(2026, 10, 2)); // Nov 2 -> start Oct 27
+ok('priority window spans month boundary', pw.start === '10/27' && pw.end === '11/2');
+
 // 6d. Idempotency guard: an episode already published today (Phoenix)
 // blocks a second run; yesterday's episode does not. Phoenix is UTC-7
 // year-round, so 2026-11-04T18:36Z is 11:36 AM Phoenix the same day,
@@ -156,13 +164,20 @@ ok('TTS_PROVIDER env enables chirp', resolveTtsProvider(gi) === 'chirp');
 ok('show config beats env default', resolveTtsProvider({ ...gi, ttsProvider: 'gemini' }) === 'gemini');
 delete process.env.TTS_PROVIDER;
 
-// 7b. SSML builder: pronunciations, breaks, escaping, tag-subset compliance
+// 7b. SSML builder: pronunciations, breaks, escaping, tag-subset compliance.
+// Pronunciations are plain-text respells from the shared dictionary — NO
+// <sub> and NO <say-as interpret-as="characters"> anymore (the say-as
+// wrapper stretched acronyms letter by letter: the artificial slow-down
+// removed 2026-11-12). Standard acronyms pass through untouched for
+// Chirp to render natively.
 const pron = applyPronunciations('fund your 401(k) and check the HMO before EBITDA at Aflac');
-ok('ssml sub for 401(k)', pron.includes('<sub alias="four oh one k">401(k)</sub>'));
-ok('ssml say-as for HMO', pron.includes('<say-as interpret-as="characters">HMO</say-as>'));
-ok('ssml sub for EBITDA', pron.includes('<sub alias="ee-bit-dah">EBITDA</sub>'));
-ok('ssml sub for Aflac', pron.includes('<sub alias="aff-lack">Aflac</sub>'));
-ok('ssml leaves lowercase prose alone', applyPronunciations('the hmo down the road') === 'the hmo down the road');
+ok('respell for 401(k)', pron.includes('four oh one k') && !pron.includes('401(k)'));
+ok('acronyms pass through natively (no say-as slow-down)', pron.includes('check the HMO before') && !pron.includes('<say-as') && !pron.includes('<sub'));
+ok('respell for EBITDA', pron.includes('ee-bit-dah'));
+ok('respell for Aflac', pron.includes('aff-lack'));
+ok('respell for Unum', applyPronunciations('Unum Group posted results') === 'You-num Group posted results');
+ok('respell leaves lowercase prose alone', applyPronunciations('the hmo down the road') === 'the hmo down the road');
+ok('turn ssml carries respell, no say-as', buildTurnSsml('Unum grew again.', prosodyForHost(0)).includes('You-num') && !buildTurnSsml('Unum grew again.', prosodyForHost(0)).includes('<say-as'));
 const ssml = buildTurnSsml('First topic point.\n\nSecond topic point & more.', prosodyForHost(0));
 ok('ssml wraps in speak', ssml.startsWith('<speak>') && ssml.endsWith('</speak>'));
 ok('ssml break at paragraph transition', ssml.includes('<break time="650ms"/>'));
