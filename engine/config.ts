@@ -41,7 +41,7 @@ export function loadShowConfig(showId: string, repoRoot: string = process.cwd())
     language: raw.language || 'en-us',
     hosts: raw.hosts,
     ttsProvider: raw.ttsProvider,
-    ttsModel: raw.ttsModel || 'gemini-2.5-flash-preview-tts',
+    ttsModel: raw.ttsModel || 'gemini-3.8-flash-tts',
     textModel: raw.textModel || 'gemini-2.5-flash',
     targetMinutes: raw.targetMinutes || 15,
     wordsPerMinute: raw.wordsPerMinute || 150,

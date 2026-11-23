@@ -21,7 +21,7 @@ hosts:
 # (TTS_PROVIDER=chirp makes Chirp 3 HD the default). Set ttsProvider here
 # to pin this show to one provider regardless of the environment.
 ttsProvider: chirp
-ttsModel: gemini-2.5-flash-preview-tts
+ttsModel: gemini-3.8-flash-tts
 textModel: gemini-2.5-flash
 targetMinutes: 15
 wordsPerMinute: 150
