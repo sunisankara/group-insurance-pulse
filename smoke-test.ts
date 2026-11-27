@@ -1,5 +1,5 @@
 import { loadShowConfig, resolveTtsProvider } from './engine/config.js';
-import { parseRanked, newsWindow, dedupeStories, extractLensNames, extractPriorityWatch, priorityWindow } from './engine/news.js';
+import { parseRanked, newsWindow, dedupeStories, extractLensNames, extractPriorityWatch, priorityWindow, extractEvergreenTopics, pickEvergreenTopic } from './engine/news.js';
 import { splitSegments, splitOversizedSegment } from './engine/script.js';
 import { auditScript } from './engine/audit.js';
 import { generateRSSFeed } from './engine/rss.js';
@@ -53,7 +53,7 @@ ok('splitSegments', splitSegments(script).length === 2);
 // 5. audit catches problems, passes good script
 const topics = ['loss ratios in group disability', 'broker consolidation trends', 'PFML mandate expansion', 'claims automation pilots', 'reinsurance treaty renewals', 'enrollment platform upgrades'];
 const good = Array.from({length: 60}, (_, i) =>
-  `Aria: On ${topics[i % topics.length]}, the development numbered ${i} deserves scrutiny because the underlying economics shift materially for carriers.\nDorian: From the field, item ${i} lands differently — distributors I talk to see a practical opening here worth testing this quarter.`).join('\n')
+  `Aria: On ${topics[i % topics.length]}, the development numbered ${i} deserves scrutiny because the underlying economics shift materially for carriers.\nDorian: From the field, item ${i} lands differently — the enrollment data points to a practical opening here worth testing this quarter.`).join('\n')
   + '\nAria: Thanks for joining us on Group Insurance Daily Pulse.\nDorian: We\'ll be back tomorrow — see you then.';
 const aGood = auditScript(gi, good);
 ok('audit passes decent script', aGood.passed);
@@ -69,8 +69,9 @@ const aDup = auditScript(gi, dup);
 ok('audit catches duplicated story', !aDup.passed && aDup.warnings.some(i => i.includes('duplicated story')));
 
 // 5b. Oct 2026 regressions: truncated script (mid-sentence, no sign-off) must
-// fail; AI-tell phrases must fail; Dorian's room anecdote repeated from a
-// recent episode must fail.
+// fail; AI-tell phrases must fail. Nov 27, 2026 (facts-first revamp):
+// fabricated first-person anecdotes are a HARD failure in ANY episode —
+// fresh or repeated — and so are asterisks and closing reprises.
 const truncated = good.slice(0, good.length - 400) + ' and that is why brokers are so';
 ok('audit fails truncated script', !auditScript(gi, truncated).passed);
 const withTell = good.replace('deserves scrutiny', 'deserves scrutiny — moreover, it is a landscape worth mapping');
@@ -80,8 +81,23 @@ ok('truncated script is a hard failure', !auditScript(gi, truncated).hardPassed)
 const roomToday = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
 const roomRecent = ['Aria: Earlier.\nDorian: I was in a room last week where this exact fight played out.'];
 ok('audit fails repeated room anecdote', !auditScript(gi, roomToday, roomRecent).passed);
-const roomFresh = good + '\nAria: One more thing before we go.\nDorian: I was in a room in Dallas where a broker said the same thing.';
-ok('audit allows room anecdote when not recent', auditScript(gi, roomFresh, []).passed || auditScript(gi, roomFresh, ['Aria: A quiet day.\nDorian: Agreed, nothing to add.']).passed);
+ok('audit hard-fails room anecdote even when fresh', !auditScript(gi, roomToday, []).hardPassed);
+const clientAnecdote = good + '\nDorian: I talked to a client the other day who is seeing exactly this.';
+ok('audit hard-fails client anecdote', !auditScript(gi, clientAnecdote).hardPassed && auditScript(gi, clientAnecdote).issues.some(i => i.includes('anecdote')));
+const withAsterisk = good.replace('deserves scrutiny', 'deserves *real* scrutiny');
+ok('audit hard-fails asterisk', !auditScript(gi, withAsterisk).hardPassed && auditScript(gi, withAsterisk).issues.some(i => i.includes('asterisk')));
+// Closing reprise: the final segment replays an early segment verbatim.
+const repriseChunk = 'Aria: MetLife announced a two billion dollar acquisition of a dental carrier today, expanding its voluntary benefits footprint significantly across the midwest region.\nDorian: That dental deal reshapes the voluntary market in ways brokers will feel immediately this enrollment season.';
+const repriseFiller = Array.from({length: 55}, (_, i) => `Aria: Analysis point ${i} covers market dynamic number ${i} with fresh wording about carrier economics and buyer behaviour today.\nDorian: Agreed, and point ${i} adds a separate angle on distribution practice that nobody has phrased quite this way before.`).join('\n');
+const reprise = repriseChunk + '\n' + repriseFiller + '\n[TRANSITION]\n' + repriseChunk + '\nAria: Thanks for listening, everyone.\nDorian: We\'ll be back tomorrow — see you then.';
+const aReprise = auditScript(gi, reprise);
+ok('audit hard-fails closing reprise', !aReprise.hardPassed && aReprise.issues.some(i => i.includes('repeats dialogue from earlier')));
+// Scaled duration band: a ~9-minute script fails the full-length band but
+// passes when the day's target is scaled down (thin-day episodes).
+const shortScript = Array.from({length: 40}, (_, i) => `Aria: Briefing point ${i} covers development number ${i} in the market with specific figures and named companies for leaders.\nDorian: Point ${i} matters because buyers and brokers adjust plans when numbers like these move during the quarter ahead.`).join('\n')
+  + '\nAria: Thanks for listening.\nDorian: We\'ll be back tomorrow.';
+ok('short script fails full-length band', auditScript(gi, shortScript).issues.some(i => i.includes('outside')));
+ok('short script passes scaled band', auditScript(gi, shortScript, [], { targetMinutes: 9 }).hardPassed);
 
 // 5c. Oct 31 regressions (the five-day GI outage): a digest script recycles
 // recent episodes BY DESIGN — it must fail the recycled-phrase check as a
@@ -120,6 +136,12 @@ ok('priority watch finds NYL GBS', giPriority.some((e) => e.includes('New York L
 ok('priority watch empty for healthcare', extractPriorityWatch(hc.newsDoc).length === 0);
 const pw = priorityWindow(new Date(2026, 10, 2)); // Nov 2 -> start Oct 27
 ok('priority window spans month boundary', pw.start === '10/27' && pw.end === '11/2');
+
+// 6c3. Evergreen topic banks parse for both shows and the daily pick works.
+const giEvergreen = extractEvergreenTopics(gi.evergreenDoc);
+ok('evergreen topics parsed (gi)', giEvergreen.length >= 8 && giEvergreen.some((t) => /life/i.test(t.topic)));
+ok('evergreen topics parsed (hc)', extractEvergreenTopics(hc.evergreenDoc).length >= 6);
+ok('evergreen daily pick returns a topic', !!pickEvergreenTopic(gi, new Date(2026, 10, 27)));
 
 // 6d. Idempotency guard: an episode already published today (Phoenix)
 // blocks a second run; yesterday's episode does not. Phoenix is UTC-7
@@ -174,7 +196,10 @@ const pron = applyPronunciations('fund your 401(k) and check the HMO before EBIT
 ok('respell for 401(k)', pron.includes('four oh one k') && !pron.includes('401(k)'));
 ok('acronyms pass through natively (no say-as slow-down)', pron.includes('check the HMO before') && !pron.includes('<say-as') && !pron.includes('<sub'));
 ok('respell for EBITDA', pron.includes('ee-bit-dah'));
-ok('respell for Aflac', pron.includes('aff-lack'));
+ok('respell for Aflac', pron.includes('AFF-lack'));
+ok('respell catches AFLAC in caps', applyPronunciations('AFLAC posted results') === 'AFF-lack posted results');
+ok('respell catches Aflac possessive', applyPronunciations("Aflac's dividend grew") === "AFF-lack's dividend grew");
+ok('respell catches curly possessive', applyPronunciations('Aflac’s streak is long') === 'AFF-lack’s streak is long');
 ok('respell for Unum', applyPronunciations('Unum Group posted results') === 'You-num Group posted results');
 ok('respell leaves lowercase prose alone', applyPronunciations('the hmo down the road') === 'the hmo down the road');
 ok('turn ssml carries respell, no say-as', buildTurnSsml('Unum grew again.', prosodyForHost(0)).includes('You-num') && !buildTurnSsml('Unum grew again.', prosodyForHost(0)).includes('<say-as'));
@@ -258,6 +283,16 @@ const noneOut = await synthesizeSegmentChirp(gi, '[TRANSITION]', async () => ['s
   sleep: async () => {},
 });
 ok('empty segment reaches neither provider', noneOut.length === 0 && getChirpUsage().fallbacks === 1);
+// Single asterisks must be stripped before synthesis (the voices read a
+// surviving * aloud as the word "asterisk" — Nov 27, 2026).
+captured = null;
+const starOut = await synthesizeSegmentChirp(gi, 'Aria: A *big* update and a **bold** claim for brokers today.', async () => ['should-not-fallback'], {
+  fetchFn: mockOk as any,
+  apiKey: 'test-key',
+  sleep: async () => {},
+});
+const starBody = JSON.parse(captured!.init.body);
+ok('chirp strips single asterisks before synthesis', starOut.length === 1 && !starBody.input.ssml.includes('*') && starBody.input.ssml.includes('big'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

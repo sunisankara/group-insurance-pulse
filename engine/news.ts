@@ -159,7 +159,8 @@ For each candidate provide:
 - HEADLINE: [Title]
 - DATE: [M/D published]
 - SOURCE: [Outlet or primary source]
-- FACTS: [Bullet points of numbers, companies, and "so what"]
+- FACTS: [5-7 bullet points: the hard numbers, companies, dates, and terms of the development itself]
+- BACKGROUND: [2-3 sentences of depth the hosts can draw on: a snapshot of the company (size, segment, recent results), the history of this issue, prior related moves by this company or its competitors, and market-context numbers (market size, growth rates, typical benchmarks)]
 
 RULES:
 - Every story MUST be dated ${day1} or ${day2}. IGNORE anything older.
@@ -230,22 +231,23 @@ ${candidates}
 AVAILABLE LENSES — for each story copy EXACTLY one of these names, the most revealing angle:
 ${lensList}
 
-TASK: Rank the candidates and select the top ${keep} stories that matter MOST to senior leaders. Score each on:
+TASK: Rank the candidates and select the stories that matter MOST to senior leaders, up to ${keep}. Score each on:
 1. P&L / business impact — does this move revenue, margin, or risk?
 2. Strategic surprise — is this unexpected or a first-of-its-kind move?
 3. Regulatory / policy weight — does it change the rules?
 4. Breadth — does it affect many carriers / the whole market, not one niche player?
 
 Drop incremental press-release fluff and vendor announcements with no hard numbers.
-IMPORTANT: return EXACTLY ${keep} ranked stories, no fewer. If fewer than ${keep} are strong, include the next-best candidates anyway (weakest last) — a short list is a failure.
+IMPORTANT: quality over quantity. Return ONLY stories that genuinely clear the bar — if just 3 of the candidates are strong, return 3. Never pad the list with a weak story to hit a number; a thin day is covered by going deeper on fewer stories, not by promoting filler.
 ${priorityBlock}
 
 OUTPUT FORMAT — for each selected story, in rank order, with EXACTLY these labeled lines:
 [RANK n]
 HEADLINE: [Title]
 LENS: [one name copied exactly from the available lenses list]
-FACTS: [2-4 bullets: numbers, companies, so-what]
+FACTS: [4-6 bullets: the hard numbers, companies, dates, and terms]
 CONTEXT: [Why this matters — 2-3 sentences for a senior leader]
+BACKGROUND: [Deeper material drawn from the candidate's background: company snapshot, history of the issue, prior related moves, market-context numbers — 2-4 sentences the hosts can use to go beyond the headline]
 
 Do not add any other text.`;
 
@@ -253,7 +255,7 @@ Do not add any other text.`;
     ai().models.generateContent({
       model: cfg.textModel,
       contents: prompt,
-      config: { temperature: 0.4, maxOutputTokens: 6000, thinkingConfig: { thinkingBudget: 0 } },
+      config: { temperature: 0.4, maxOutputTokens: 9000, thinkingConfig: { thinkingBudget: 0 } },
     })
   );
   const stories = parseRanked(response.text || '');
@@ -263,6 +265,70 @@ Do not add any other text.`;
     console.log((response.text || '').slice(0, 3000));
   }
   return stories;
+}
+
+/**
+ * Evergreen topic bank (shows/<id>/evergreen.md): practical-briefing
+ * topics for thin-news days, in the same "- **Topic** — angle" shape as
+ * lenses.md. On a day with very few fresh stories, run.ts picks one
+ * topic (rotating by day of year) and builds a search-grounded brief so
+ * the episode closes with a substantive practical segment instead of
+ * padding the news or repeating a recent story. Exported for tests.
+ */
+export interface EvergreenTopic {
+  topic: string;
+  angle: string;
+}
+
+export function extractEvergreenTopics(evergreenDoc: string): EvergreenTopic[] {
+  return [...evergreenDoc.matchAll(/-\s*\*\*(.+?)\*\*\s*—\s*(.+)/g)].map((m) => ({
+    topic: m[1].trim(),
+    angle: m[2].trim(),
+  }));
+}
+
+export function pickEvergreenTopic(cfg: ShowConfig, now: Date = new Date()): EvergreenTopic | null {
+  const topics = extractEvergreenTopics(cfg.evergreenDoc);
+  if (topics.length === 0) return null;
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+  return topics[dayOfYear % topics.length];
+}
+
+/**
+ * Search-grounded brief for one evergreen topic — same grounding
+ * discipline as news recall: named companies and reported numbers only,
+ * so the practical segment is as fact-anchored as the news segments.
+ */
+export async function evergreenBrief(
+  cfg: ShowConfig,
+  t: EvergreenTopic
+): Promise<{ facts: string; context: string }> {
+  const prompt = `Act as a Senior Industry Researcher preparing a practical briefing for "${cfg.title}", a show for senior industry leaders.
+
+TOPIC: ${t.topic}
+ANGLE: ${t.angle}
+
+TASK: Research this topic and produce a compact, fact-dense brief the hosts can build a 3-4 minute practical segment from. Use current, real-world material: named carriers / companies / brokers / health systems and what they actually did, reported numbers and benchmarks, concrete practices and playbooks, common failure modes. No generic advice untethered to a named example or a number.
+
+OUTPUT FORMAT — exactly these labeled lines:
+FACTS: [5-7 bullets: named examples, numbers, concrete practices]
+CONTEXT: [2-3 sentences: why this matters to a senior leader right now, and the main tension or trade-off]
+
+Do not add any other text.`;
+
+  const response = await withRetry(() =>
+    ai().models.generateContent({
+      model: cfg.textModel,
+      contents: prompt,
+      config: { tools: [{ googleSearch: {} }], thinkingConfig: { thinkingBudget: 0 } },
+    })
+  );
+  const text = response.text || '';
+  const get = (label: string) => {
+    const m = text.match(new RegExp(`${label}:\\s*([\\s\\S]*?)(?=\\n[A-Z]+:|$)`, 'i'));
+    return m ? m[1].trim() : '';
+  };
+  return { facts: get('FACTS'), context: get('CONTEXT') };
 }
 
 export function parseRanked(text: string): RankedStory[] {
@@ -280,6 +346,7 @@ export function parseRanked(text: string): RankedStory[] {
       headline: headline.replace(/^\[|\]$/g, ''),
       facts: get('FACTS'),
       context: get('CONTEXT'),
+      background: get('BACKGROUND'),
       lens: get('LENS'),
       source: get('SOURCE'),
     });

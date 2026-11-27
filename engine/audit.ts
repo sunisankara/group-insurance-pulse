@@ -18,6 +18,14 @@ import { splitSegments } from './script.js';
  * the regeneration loop, but a script with only soft warnings is still
  * publishable after the attempts run out — the Oct 26-30 outage happened
  * because soft checks held veto power over the whole day.
+ *
+ * Facts-first revamp (Nov 27, 2026, Shankar's direction): three listener-
+ * reported defects were promoted to HARD checks — fabricated first-person
+ * field anecdotes ("I talked to a client the other day..."), asterisk
+ * characters (the voices read them aloud as the word "asterisk"), and a
+ * closing segment that reprises dialogue from earlier in the episode.
+ * The duration band also follows the day's scaled target length
+ * (opts.targetMinutes) instead of always using the show's full target.
  */
 
 /** Phrases real hosts don't say on air; their presence marks generated filler. */
@@ -34,14 +42,30 @@ const AI_TELLS: Array<[RegExp, string]> = [
 ];
 
 /**
- * Signature host devices that become tics when repeated across episodes —
- * e.g. Dorian's "I was in a room..." field anecdote, which his character
- * bible accidentally prescribed as his default opener. A device may appear
- * today OR in a recent episode, not in both.
+ * Fabricated first-person field anecdotes — a HARD failure whenever one
+ * appears, in any episode (Nov 27, 2026: Shankar flagged Dorian's "I
+ * talked to a client the other day / I was in a room with..." habit as
+ * invented colour; hosts must cite named companies and what they did).
+ * These used to be soft cross-episode device warnings; that let a fresh
+ * one air every few days, which is exactly what the listener heard.
+ */
+const ANECDOTE_FRAMES: Array<[RegExp, string]> = [
+  [/\bi was (just |sitting )?in (a|the|that) room\b|\bi'?ve been in those rooms\b|\bsat in (a|that) room\b|\bin the room (when|where)\b/i, '"I was in the room" anecdote'],
+  [/\bi was (just )?talking to a (friend|broker|client|colleague)\b/i, '"I was talking to a friend/client" anecdote'],
+  [/\bi (just )?(talked|spoke|was speaking) (to|with) (a|my) (client|broker|friend|colleague|employer)\b/i, '"I talked to a client/broker" anecdote'],
+  [/\b(a|my) (client|broker|friend|colleague) (told|asked|called|texted|emailed) me\b/i, '"a client/broker told me" anecdote'],
+  [/\bmy (client|clients|broker|brokers) (told|said|says|asked|tell|tells)\b/i, '"my clients tell me" anecdote'],
+  [/\b(brokers|clients|distributors|employers|people) i (talk|speak|talked|spoke) to\b/i, '"brokers/clients I talk to" sourcing'],
+  [/\bi (just )?got off (a|the) (call|phone) with\b/i, '"I just got off a call with" anecdote'],
+];
+
+/**
+ * Signature host devices that become tics when repeated across episodes.
+ * A device may appear today OR in a recent episode, not in both. (The
+ * first-person anecdote frames moved to ANECDOTE_FRAMES above and are
+ * now hard failures outright.)
  */
 const SIGNATURE_FRAMES: Array<[RegExp, string]> = [
-  [/\bi was (just |sitting )?in (a|the|that) room\b|\bi'?ve been in those rooms\b|\bsat in (a|that) room\b|\bin the room (when|where)\b/i, '"I was in the room" field anecdote'],
-  [/\bi was (just )?talking to a (friend|broker|client|colleague)\b/i, '"I was talking to a friend" anecdote'],
   [/\bmed-surg floor\b/i, '"on a med-surg floor" scene-setter'],
   [/\bstood in (an?|the) (ED|emergency)\b/i, '"stood in the ED" scene-setter'],
 ];
@@ -76,17 +100,20 @@ export function auditScript(
   cfg: ShowConfig,
   script: string,
   recentScripts: string[] = [],
-  opts: { digest?: boolean } = {}
+  opts: { digest?: boolean; targetMinutes?: number } = {}
 ): AuditResult {
   const issues: string[] = [];
   const warnings: string[] = [];
   const segments = splitSegments(script);
   const hostNames = cfg.hosts.map((h) => h.name);
 
-  // 1. Duration estimate from word count (±20% tolerance on the estimate)
+  // 1. Duration estimate from word count. The band follows the day's
+  // scaled target (opts.targetMinutes — run.ts shortens thin days on
+  // purpose) rather than always demanding the show's full-length target.
   const words = script.split(/\s+/).filter(Boolean).length;
   const estMinutes = words / cfg.wordsPerMinute;
-  const [lo, hi] = [cfg.targetMinutes - 3, cfg.targetMinutes + 3];
+  const target = opts.targetMinutes ?? cfg.targetMinutes;
+  const [lo, hi] = [Math.max(4, target - 3), target + 3];
   if (estMinutes < lo || estMinutes > hi) {
     issues.push(
       `Estimated duration ${estMinutes.toFixed(1)} min (from ~${words} words) is outside the ${lo}-${hi} min band`
@@ -124,6 +151,27 @@ export function auditScript(
   const repeats = [...phraseSegments.values()].filter((s) => s.size > 1).length;
   if (repeats > 2) {
     warnings.push(`Detected ${repeats} phrases repeated across different segments — possible duplicated story`);
+  }
+
+  // 4b. Closing reprise — a HARD failure (Nov 27, 2026: listeners heard
+  // dialogue from minutes earlier repeated near the end of episodes).
+  // Check 4 only catches exact 8-word repeats and is soft; a closing
+  // segment that replays the episode's own earlier lines — even lightly
+  // reworded, which still shares most 5-word runs — must never air. The
+  // final segment legitimately names the show and says goodbye, which
+  // accounts for a handful of shared 5-grams; a real reprise shares far
+  // more.
+  if (segments.length >= 2) {
+    const earlierGrams = new Set<string>();
+    for (let i = 0; i < segments.length - 1; i++) {
+      for (const g of ngrams(segments[i], 5)) earlierGrams.add(g);
+    }
+    const tailShared = [...ngrams(segments[segments.length - 1], 5)].filter((g) => earlierGrams.has(g)).length;
+    if (tailShared > 10) {
+      issues.push(
+        `Final segment repeats dialogue from earlier in the episode (${tailShared} phrases already heard) — the close must be fresh material, never a reprise`
+      );
+    }
   }
 
   // 5. Headlines: later segments should open with a headline-ish line, not a
@@ -174,6 +222,23 @@ export function auditScript(
   const tells = AI_TELLS.filter(([re]) => re.test(script)).map(([, label]) => label);
   if (tells.length > 0) {
     warnings.push(`AI-tell phrase(s) present: ${tells.join(', ')} — rewrite in plain spoken language`);
+  }
+
+  // 7b. Fabricated field anecdotes — HARD (see ANECDOTE_FRAMES). Applies
+  // to digests too: a digest host inventing a client conversation is the
+  // same defect in a recap.
+  const anecdotes = ANECDOTE_FRAMES.filter(([re]) => re.test(script)).map(([, label]) => label);
+  if (anecdotes.length > 0) {
+    issues.push(
+      `Fabricated first-person anecdote(s) present: ${anecdotes.join(', ')} — hosts never invent personal field stories; cite a named company, broker, or carrier from the material and what it actually did`
+    );
+  }
+
+  // 7c. Asterisks — HARD. A single * survives the TTS cleaners' old
+  // bold-only stripping and the voices read it aloud as the word
+  // "asterisk" (flagged Nov 27, 2026). No asterisks anywhere, ever.
+  if (script.includes('*')) {
+    issues.push('Script contains asterisk character(s) — the voices read them aloud as the word "asterisk"; write emphasis in plain words instead');
   }
 
   // 8. Cross-episode repetition: signature host devices and phrasing carried

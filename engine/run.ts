@@ -17,7 +17,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { Buffer } from 'buffer';
 import { loadShowConfig } from './config.js';
-import { recallCandidates, rankStories, getRecentCorpus, dedupeStories } from './news.js';
+import { recallCandidates, rankStories, getRecentCorpus, dedupeStories, pickEvergreenTopic, evergreenBrief } from './news.js';
 import { generateScript, splitSegments, ContinuityContext } from './script.js';
 import { synthesizeSegment } from './voices.js';
 import { getChirpUsage } from './chirp.js';
@@ -26,7 +26,7 @@ import { buildDigestMaterial, generateDigestScript } from './digest.js';
 import { generateRSSFeed } from './rss.js';
 import { phoenixDate, publishedToday } from './dates.js';
 import { pickEncoreSource } from './encore.js';
-import { AuditResult, EpisodeRecord } from './types.js';
+import { AuditResult, EpisodeRecord, RankedStory } from './types.js';
 
 const args = process.argv.slice(2);
 const showId = args[args.indexOf('--show') + 1];
@@ -52,15 +52,17 @@ async function tryFreshScript(
   cfg: ReturnType<typeof loadShowConfig>,
   stories: Parameters<typeof generateScript>[1],
   recentScripts: string[],
-  continuity: ContinuityContext
+  continuity: ContinuityContext,
+  targetMinutes: number,
+  evergreen: { topic: string; angle: string } | null
 ): Promise<ScriptOutcome | null> {
   let feedback: string | undefined;
   let lastIssues: string[] = [];
   let softOutcome: ScriptOutcome | null = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const script = await generateScript(cfg, stories, feedback, continuity);
-      const audit = auditScript(cfg, script, recentScripts);
+      const script = await generateScript(cfg, stories, feedback, continuity, { targetMinutes, evergreen });
+      const audit = auditScript(cfg, script, recentScripts, { targetMinutes });
       if (audit.passed) {
         console.log(`Script audit passed on attempt ${attempt} (~${audit.estimatedMinutes?.toFixed(1)} min estimated).`);
         return { script, audit, digest: false };
@@ -220,24 +222,62 @@ async function run() {
   const candidates = await recallCandidates(cfg);
   if (!candidates.trim()) throw new Error('News recall returned empty');
 
-  console.log('Step 2: Ranking stories (8 candidates, hard-deduped to 5)...');
+  console.log('Step 2: Ranking stories (up to 8 candidates, hard-deduped)...');
   const ranked = await rankStories(cfg, candidates, 8);
   if (ranked.length === 0) throw new Error('Ranking returned no stories');
   const fresh = dedupeStories(ranked, getRecentCorpus(cfg.rssDir));
-  // The show must go on: if dedup leaves fewer than 3, refill from the
-  // dropped repeats in rank order (loud warning) rather than failing the day.
-  let stories = fresh.slice(0, 5);
-  if (stories.length < 3) {
-    const dropped = ranked.filter((r) => !fresh.includes(r));
-    const need = Math.min(3 - stories.length, dropped.length);
-    stories = [...stories, ...dropped.slice(0, need)];
-    console.log(`WARNING: only ${fresh.length} fresh stories; using ${need} recent repeat(s) to fill the episode.`);
+  // Facts-first revamp (Nov 27, 2026): NO repeat refill anymore. The old
+  // code topped a thin slate back up to 3 with stories from the last 7
+  // days; Shankar's direction is the opposite — fewer stories covered
+  // deeper, a shorter episode, and an evergreen practical segment on
+  // truly thin days. Zero fresh stories still fails the day into the
+  // digest/encore chain.
+  const stories: RankedStory[] = fresh.slice(0, 5);
+  if (stories.length === 0) throw new Error('Ranking returned no fresh stories after dedup');
+  if (stories.length < fresh.length || stories.length < ranked.length) {
+    console.log(`Slate: ${stories.length} fresh stor${stories.length === 1 ? 'y' : 'ies'} (ranked ${ranked.length}, fresh after dedup ${fresh.length}).`);
   }
-  if (stories.length === 0) throw new Error('Ranking returned no stories');
+
+  // Thin day (1-2 fresh stories): close with an evergreen practical
+  // segment built from a search-grounded brief — substantive and
+  // fact-anchored, not padding. A failed brief never kills the day.
+  let evergreen: { topic: string; angle: string } | null = null;
+  if (stories.length <= 2) {
+    const picked = pickEvergreenTopic(cfg);
+    if (picked) {
+      try {
+        const brief = await evergreenBrief(cfg, picked);
+        if (brief.facts) {
+          evergreen = picked;
+          stories.push({
+            rank: stories.length + 1,
+            headline: picked.topic,
+            facts: brief.facts,
+            context: brief.context,
+            lens: 'Evergreen briefing',
+          });
+          console.log(`Thin day: evergreen segment added — "${picked.topic}".`);
+        } else {
+          console.log('Thin day: evergreen brief came back empty; continuing without it.');
+        }
+      } catch (err: any) {
+        console.log(`Thin day: evergreen brief failed (${err?.message || err}); continuing without it.`);
+      }
+    }
+  }
+
+  // Episode length scales with the material: a full 5-story slate gets
+  // the show's full target; each missing story trims ~2 minutes; an
+  // evergreen segment adds ~3 back. Shorter on thin days by design —
+  // the audit band follows this target, so nobody pads to a quota.
+  const newsCount = evergreen ? stories.length - 1 : stories.length;
+  const TARGET_BY_COUNT: Record<number, number> = { 5: cfg.targetMinutes, 4: 13, 3: 11, 2: 9, 1: 8 };
+  const targetMinutes = (TARGET_BY_COUNT[newsCount] ?? cfg.targetMinutes) + (evergreen ? 3 : 0);
   console.log('Ranked:', stories.map((s) => `${s.rank}. ${s.headline} [${s.lens}]`).join('\n'));
+  console.log(`Episode target: ~${targetMinutes} min (${newsCount} news stor${newsCount === 1 ? 'y' : 'ies'}${evergreen ? ' + evergreen' : ''}).`);
 
   console.log('Step 3: Generating script (audit is a hard gate)...');
-  const outcome = await tryFreshScript(cfg, stories, recentScripts, continuity);
+  const outcome = await tryFreshScript(cfg, stories, recentScripts, continuity, targetMinutes, evergreen);
 
   if (DRY_RUN) {
     if (outcome) {
@@ -317,7 +357,10 @@ async function run() {
     console.log('WARNING: ffprobe duration lookup failed; feed will carry the target duration for this episode.');
   }
 
-  const topStories = stories.map((s) => s.headline);
+  // The evergreen segment is a practical briefing, not a news story: keep
+  // it out of the episode's story list (and therefore out of the 7-day
+  // dedup corpus, where its generic topic wording could block real news).
+  const topStories = stories.filter((s) => s.lens !== 'Evergreen briefing').map((s) => s.headline);
   episodes.unshift({
     id,
     date: new Date().toISOString(),

@@ -30,6 +30,8 @@ export interface ShowConfig {
   hostsDoc: string;
   lensesDoc: string;
   newsDoc: string;
+  /** Evergreen practical-segment topic bank (shows/<id>/evergreen.md); '' when the show has none. */
+  evergreenDoc: string;
 }
 
 export interface RankedStory {
@@ -37,6 +39,8 @@ export interface RankedStory {
   headline: string;
   facts: string;
   context: string;
+  /** Deeper background: company snapshot, history of the issue, prior related moves, market context. */
+  background?: string;
   lens: string; // lens name from lenses.md
   source?: string;
 }

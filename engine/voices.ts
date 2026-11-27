@@ -52,10 +52,12 @@ export async function synthesizeSegment(cfg: ShowConfig, segmentText: string): P
  * voices.
  */
 export async function synthesizeSegmentGemini(cfg: ShowConfig, segmentText: string): Promise<string[]> {
-  // Strip bracketed stage tags like [TRANSITION] and markdown emphasis
-  // (**bold** around spoken headlines) — neither should ever reach the TTS
-  // model as literal text. Keep "Name:" speaker labels.
-  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*\*/g, '').trim();
+  // Strip bracketed stage tags like [TRANSITION] and markdown emphasis —
+  // neither should ever reach the TTS model as literal text. ALL
+  // asterisks are stripped, not just ** pairs: a single * survived the
+  // old cleaning and was read aloud as the word "asterisk" (Nov 27,
+  // 2026). Keep "Name:" speaker labels.
+  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*/g, '').trim();
   if (!cleanText) return [];
 
   // Same pronunciation dictionary as the Chirp path (plain-text respells
