@@ -279,8 +279,11 @@ export async function synthesizeSegmentChirp(
   deps: ChirpDeps = {}
 ): Promise<string[]> {
   // Same cleaning as the Gemini path: bracketed stage tags and markdown
-  // emphasis must never reach the synthesizer as literal text.
-  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*\*/g, '').trim();
+  // emphasis must never reach the synthesizer as literal text. ALL
+  // asterisks are stripped, not just ** pairs — a single * from *emphasis*
+  // writing survived the old cleaning and the voice read it aloud as the
+  // word "asterisk" (flagged Nov 27, 2026).
+  const cleanText = segmentText.replace(/\[[^\]]*\]/g, '').replace(/\*/g, '').trim();
   if (!cleanText) return [];
 
   try {

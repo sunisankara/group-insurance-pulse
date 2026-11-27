@@ -17,6 +17,11 @@ export function loadShowConfig(showId: string, repoRoot: string = process.cwd())
     return fs.readFileSync(p, 'utf8');
   };
 
+  const readOptionalDoc = (name: string) => {
+    const p = path.join(showDir, name);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '';
+  };
+
   if (!raw.hosts || raw.hosts.length !== 2) {
     throw new Error(`show.yaml for '${showId}' must define exactly 2 hosts`);
   }
@@ -50,6 +55,7 @@ export function loadShowConfig(showId: string, repoRoot: string = process.cwd())
     hostsDoc: readDoc('hosts.md'),
     lensesDoc: readDoc('lenses.md'),
     newsDoc: readDoc('news.md'),
+    evergreenDoc: readOptionalDoc('evergreen.md'),
   };
 }
 

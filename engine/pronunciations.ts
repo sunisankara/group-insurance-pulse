@@ -23,7 +23,13 @@
 export const PRONUNCIATIONS: Record<string, string> = {
   // Company names the engines mispronounce
   'Unum': 'You-num',
-  'Aflac': 'aff-lack',
+  // "AFF-lack", stress on the first syllable (the duck's pronunciation).
+  // The respell was plain "aff-lack" from Nov 12; on Nov 27, 2026 Shankar
+  // still heard it wrong, and a trace showed the respell firing correctly
+  // on every written form in the real scripts (Aflac, AFLAC, Aflac's) —
+  // so the leak was stress in the rendering, not the matching. The caps
+  // mark the stressed syllable (see the header note on respell emphasis).
+  'Aflac': 'AFF-lack',
   'Cigna': 'SIG-nuh',
   // Jargon said as a word, not spelled out
   'EBITDA': 'ee-bit-dah',
